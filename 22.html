@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>电磁继电器与电铃 · 原理动态还原</title>
+<style>
+  :root{
+    --ink:#0f172a;
+    --ink2:#334155;
+    --muted:#64748b;
+    --line:#e4ebee;
+    --primary:#0f766e;
+    --primary2:#14b8a6;
+    --primary-soft:#ecfdf5;
+    --accent:#f59e0b;
+    --green:#16a34a;
+    --red:#dc2626;
+    --card:#fff;
+    --radius:20px;
+    --shadow:0 22px 50px -32px rgba(15,23,42,.35), 0 2px 10px rgba(15,23,42,.04);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+    color:var(--ink);
+    line-height:1.55;
+    background:
+      radial-gradient(1100px 580px at 8% -12%, #d9f3ef 0%, rgba(217,243,239,0) 62%),
+      radial-gradient(900px 520px at 102% -6%, #fef3c7 0%, rgba(254,243,199,0) 58%),
+      #f5f8f8;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:1280px;margin:0 auto;padding:26px clamp(16px,3vw,34px) 70px}
+
+  /* ---------- 顶部 ---------- */
+  .hero{padding:12px 2px 26px}
+  .eyebrow{font-size:12.5px;letter-spacing:.22em;font-weight:800;color:var(--primary)}
+  h1{font-size:clamp(27px,3.3vw,40px);line-height:1.24;margin:10px 0 12px;letter-spacing:-.01em;font-weight:800}
+  h1 .grad{background:linear-gradient(115deg,#0f766e 5%,#0ea5e9 52%,#f59e0b 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{max-width:800px;color:#475569;font-size:15px;line-height:1.75;margin:0 0 18px}
+  .sub b{color:var(--ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:rgba(255,255,255,.9);border:1px solid rgba(148,163,184,.28);font-size:13px;color:#475569;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .chip b{color:var(--primary);font-weight:800}
+
+  /* ---------- 卡片 ---------- */
+  .card{
+    min-width:0;
+    background:rgba(255,255,255,.96);
+    border:1px solid rgba(148,163,184,.2);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    animation:rise .55s cubic-bezier(.2,.7,.3,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .device{margin-bottom:36px}
+  .device-head{display:flex;align-items:flex-start;gap:14px;margin:4px 2px 15px;flex-wrap:wrap}
+  .device-num{width:42px;height:42px;border-radius:13px;background:linear-gradient(140deg,#0f766e,#14b8a6);color:#fff;font-weight:800;font-size:17px;display:grid;place-items:center;box-shadow:0 10px 20px -10px rgba(15,118,110,.7);flex:none}
+  .device-head h2{font-size:22px;margin:0 0 2px;font-weight:800;letter-spacing:-.01em}
+  .device-head p{margin:0;color:var(--muted);font-size:13px}
+  .device-tags{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .d-tag{font-size:11.5px;font-weight:700;color:#0f766e;background:#ecfdf5;border:1px solid #ccfbf1;padding:5px 10px;border-radius:999px;white-space:nowrap}
+
+  .device-grid{display:grid;grid-template-columns:minmax(0,1fr) 356px;gap:20px;align-items:stretch}
+
+  .stage-card{display:flex;flex-direction:column;overflow:hidden}
+  .stage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px 8px}
+  .stage-title{font-size:14px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:9px}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--primary);background:var(--primary-soft);padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .stage-hint{font-size:11.5px;color:var(--muted)}
+  .stage-body{flex:1;padding:2px 8px 8px;display:flex;align-items:center}
+  .stage-svg{width:100%;height:auto;display:block;border-radius:14px}
+
+  /* SVG 通用 */
+  svg text{font-family:inherit}
+  .wire{stroke:#475569;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .wire-thin{stroke:#64748b;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .flow{stroke:#22d3ee;stroke-width:3.2;fill:none;stroke-linecap:round;stroke-dasharray:5 30;opacity:0;transition:opacity .35s}
+  .flow.on{opacity:1}
+  .tag-label{font-size:14px;fill:#334155;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+  .tag-label.small{font-size:12.5px;fill:#64748b}
+  .tag-label.blue{fill:#0369a1}
+  .leader{stroke:#94a3b8;stroke-width:1.2;stroke-dasharray:3 3}
+  .leader-dot{fill:#94a3b8}
+  .metal{fill:url(#metalGrad)}
+  .glass{fill:rgba(226,244,245,.5);stroke:#94a3b8;stroke-width:3}
+
+  /* 指示灯 */
+  .lamp .halo,.lamp .rays{opacity:0;transition:opacity .35s}
+  .lamp.on .halo{opacity:1}
+  .lamp.on .rays{opacity:.85;animation:rayPulse 2.2s ease-in-out infinite}
+  @keyframes rayPulse{0%,100%{opacity:.35}50%{opacity:.95}}
+  .lamp .bulb{transition:fill .3s,stroke .3s}
+  .lamp.green.on .bulb{fill:#bbf7d0}
+  .lamp.red.on .bulb{fill:#fecaca}
+  .lamp .filament{opacity:0;transition:opacity .3s}
+  .lamp.on .filament{opacity:1}
+
+  /* 线圈发光 */
+  .coil-glow{opacity:0;transition:opacity .35s}
+  .coil-glow.on{opacity:.55}
+  .field{opacity:0;transition:opacity .35s}
+  .field.on{opacity:.75;animation:fieldPulse 1.6s ease-in-out infinite}
+  @keyframes fieldPulse{0%,100%{opacity:.25}50%{opacity:.8}}
+
+  /* ---------- 右侧控制卡 ---------- */
+  .control-card{padding:16px 16px 14px;display:flex;flex-direction:column;gap:12px}
+  .ctrl-title{font-size:11.5px;font-weight:800;letter-spacing:.12em;color:#64748b}
+  .status-banner{display:flex;align-items:center;gap:12px;border-radius:15px;padding:12px 13px;border:1px solid;transition:.3s}
+  .status-banner.green{background:#f0fdf4;border-color:#bbf7d0}
+  .status-banner.red{background:#fef2f2;border-color:#fecaca}
+  .status-lamp{width:34px;height:34px;border-radius:50%;flex:none;position:relative}
+  .status-banner.green .status-lamp{background:radial-gradient(circle at 35% 30%,#d1fae5,#22c55e 70%);box-shadow:0 0 0 5px rgba(34,197,94,.15),0 0 18px rgba(34,197,94,.55)}
+  .status-banner.red .status-lamp{background:radial-gradient(circle at 35% 30%,#fee2e2,#ef4444 70%);box-shadow:0 0 0 5px rgba(239,68,68,.15),0 0 18px rgba(239,68,68,.55)}
+  .status-title{font-size:17px;font-weight:800;letter-spacing:.01em}
+  .status-banner.green .status-title{color:#15803d}
+  .status-banner.red .status-title{color:#b91c1c}
+  .status-sub{font-size:11.5px;color:#64748b;line-height:1.5;margin-top:1px}
+
+  .slider-block{margin-top:2px}
+  .slider-head{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;font-weight:700;color:#475569;margin-bottom:2px}
+  .slider-head b{font-size:19px;color:var(--primary);font-variant-numeric:tabular-nums}
+  .slider-wrap{position:relative;padding-top:16px}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:9px;border-radius:999px;outline:none;cursor:pointer;
+    background:linear-gradient(90deg,#38bdf8 0%,#38bdf8 var(--p,45%),#e2e8f0 var(--p,45%),#e2e8f0 100%);
+  }
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:5px solid #0891b2;box-shadow:0 5px 12px rgba(8,145,178,.35);cursor:grab}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:5px solid #0891b2;cursor:grab}
+  input[type=range]::-moz-range-track{height:9px;border-radius:999px;background:#e2e8f0}
+  .a-mark{position:absolute;top:0;left:61.5%;transform:translateX(-50%);font-size:10.5px;font-weight:800;color:#0e7490;background:#e0f2fe;border:1px solid #bae6fd;padding:1px 6px;border-radius:5px;pointer-events:none}
+  .a-mark::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:9px;background:#7dd3fc;transform:translateX(-50%)}
+  .water-scale{display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8;margin-top:5px}
+
+  .preset-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .btn{border:none;font-family:inherit;cursor:pointer;border-radius:11px;font-weight:800;transition:.18s;font-size:13px}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:#fff;border:1px solid #d7e1e6;color:#475569;padding:9px 12px}
+  .btn.ghost:hover{border-color:#5eead4;color:#0f766e;background:#f7fdfc}
+  .btn.ghost.active{background:#0f766e;border-color:#0f766e;color:#fff}
+  .btn.solid{background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;padding:10px 14px;box-shadow:0 12px 22px -12px rgba(15,118,110,.8)}
+  .btn.solid:hover{transform:translateY(-1px)}
+  .btn.small{padding:7px 10px;font-size:12px;border-radius:9px}
+
+  .divider{height:1px;background:var(--line);margin:2px 0}
+
+  .chain{display:flex;flex-direction:column;gap:5px}
+  .chain-step{display:flex;align-items:flex-start;gap:9px;padding:7px 9px;border-radius:9px;font-size:12px;color:#64748b;line-height:1.5;transition:.25s;border:1px solid transparent}
+  .chain-step .n{width:18px;height:18px;border-radius:50%;background:#f1f5f9;color:#94a3b8;font-size:10.5px;font-weight:800;display:grid;place-items:center;flex:none;margin-top:1px;transition:.25s}
+  .chain-step.active{background:#f0fdfa;color:#115e59;border-color:#ccfbf1}
+  .chain-step.active .n{background:#0d9488;color:#fff}
+  .chain-step.red.active{background:#fef2f2;color:#991b1b;border-color:#fee2e2}
+  .chain-step.red.active .n{background:#ef4444}
+  .chain-arrow{font-size:10px;color:#cbd5e1;margin-left:27px;line-height:1}
+
+  .note{font-size:11px;line-height:1.6;color:#94a3b8;margin:2px 0 0}
+  .note b{color:#64748b}
+
+  /* ---------- 电铃控制 ---------- */
+  .power-btn{width:100%;padding:12px 14px;border-radius:13px;border:1.5px solid #d7e1e6;background:#fff;color:#475569;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:.2s}
+  .power-btn .pdot{width:9px;height:9px;border-radius:50%;background:#cbd5e1;transition:.2s}
+  .power-btn.on{background:linear-gradient(135deg,#0f766e,#14b8a6);border-color:#0f766e;color:#fff;box-shadow:0 12px 22px -12px rgba(15,118,110,.8)}
+  .power-btn.on .pdot{background:#a7f3d0;box-shadow:0 0 0 3px rgba(167,243,208,.25)}
+  .speed-row{display:flex;gap:6px}
+  .speed-row .btn{flex:1;background:#fff;border:1px solid #d7e1e6;color:#64748b;padding:7px 4px;font-size:12px}
+  .speed-row .btn.active{background:#ecfdf5;border-color:#5eead4;color:#0f766e}
+  .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .mini{background:#f8fafc;border:1px solid var(--line);border-radius:11px;padding:8px 10px}
+  .mini .k{font-size:10.5px;color:#94a3b8}
+  .mini .v{font-size:17px;font-weight:800;color:#1e293b;font-variant-numeric:tabular-nums}
+  .mini .v small{font-size:11px;color:#64748b;font-weight:600}
+
+  .phases{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .phase{display:flex;align-items:flex-start;gap:9px;padding:7px 9px;border-radius:9px;font-size:11.5px;color:#64748b;border:1px solid transparent;transition:.25s;line-height:1.45}
+  .phase .ph-dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1;margin-top:5px;flex:none;transition:.25s}
+  .phase b{display:block;font-size:12px;color:#475569;font-weight:800}
+  .phase.active{background:#ecfeff;border-color:#a5f3fc}
+  .phase.active .ph-dot{background:#0891b2;box-shadow:0 0 0 4px rgba(8,145,178,.14)}
+  .phase.active b{color:#0e7490}
+
+  /* ---------- 原理说明 ---------- */
+  .explain{margin-top:18px;padding:18px 22px 20px}
+  .explain-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .explain-head h3{font-size:15.5px;margin:0;font-weight:800}
+  .explain p{font-size:13.5px;line-height:1.9;color:#334155;margin:0 0 8px}
+  .explain p:last-child{margin-bottom:0}
+  .explain b{color:#0f766e}
+  .explain .answer-note{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:12.5px;color:#475569;margin-top:8px;line-height:1.8}
+  .explain .answer-note b{color:#b45309}
+
+  /* ---------- 原题 ---------- */
+  .original{margin-top:6px;overflow:hidden}
+  .original summary{cursor:pointer;padding:17px 20px;font-size:14.5px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:9px;list-style:none}
+  .original summary::-webkit-details-marker{display:none}
+  .original summary::after{content:"＋";margin-left:auto;color:#94a3b8;font-weight:700}
+  .original[open] summary::after{content:"－"}
+  .original[open] summary{border-bottom:1px solid var(--line)}
+  .original-body{padding:16px 20px 20px;font-size:13.5px;line-height:1.95;color:#334155}
+  .original-body p{margin:0 0 10px}
+  .original-body .qnum{color:#0f766e;font-weight:800}
+  .original-body img{width:100%;max-width:960px;border-radius:12px;border:1px solid var(--line);display:block;margin-top:10px}
+
+  .footer{font-size:11.5px;color:#94a3b8;text-align:center;line-height:1.8;padding-top:22px}
+  .footer b{color:#64748b;font-weight:600}
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width:1080px){
+    .device-grid{grid-template-columns:1fr}
+    .device-tags{margin-left:0;width:100%}
+    .control-card{order:2}
+  }
+  @media (max-width:640px){
+    .page{padding:18px 14px 54px}
+    h1{font-size:26px}
+    .sub{font-size:14px}
+    .stage-head{padding:13px 14px 6px}
+    .stage-body{padding:0 4px 6px}
+    .explain{padding:15px 15px 17px}
+    .device-head h2{font-size:19px}
+    .mini-grid{grid-template-columns:1fr}
+  }
+
+  @media (max-width:760px){
+    .stage-body{overflow-x:auto;padding-bottom:12px}
+    .stage-svg{min-width:800px}
+    .stage-hint::after{content:"（左右滑动查看）"}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .card{animation:none}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">初中物理 · 电磁继电器</div>
+    <h1>电磁继电器与电铃 <span class="grad">原理动态还原</span></h1>
+    <p class="sub">还原教材 <b>图 20.3-8</b> 与 <b>图 20.3-9</b>：水位报警器怎样让红、绿灯自动切换？直流电铃为什么能持续振动、连续发声？拖动、切换，看装置里的电流与衔铁“活”起来。</p>
+    <div class="chips">
+      <span class="chip">装置一 <b>水位自动报警器</b></span>
+      <span class="chip">装置二 <b>直流电铃</b></span>
+      <span class="chip">核心元件 <b>电磁继电器</b></span>
+      <span class="chip">动画 + 部件标注 + 标准说明</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= 装置一 ================= -->
+    <section class="device" id="alarm">
+      <div class="device-head">
+        <div class="device-num">01</div>
+        <div>
+          <h2>水位自动报警器</h2>
+          <p>图 20.3-8 · 水位到达金属块 A 时红灯亮，水位下降后绿灯亮</p>
+        </div>
+        <div class="device-tags">
+          <span class="d-tag">控制电路（弱电）</span>
+          <span class="d-tag">工作电路（强电）</span>
+          <span class="d-tag">电磁继电器</span>
+        </div>
+      </div>
+
+      <div class="device-grid">
+        <article class="card stage-card">
+          <div class="stage-head">
+            <div class="stage-title"><span class="tag">图 20.3-8</span>动画演示</div>
+            <span class="stage-hint">拖动滑块或开启自动演示</span>
+          </div>
+          <div class="stage-body">
+            <svg id="alarmSvg" class="stage-svg" viewBox="0 0 1080 660" role="img" aria-label="水位自动报警器动画：水箱、金属块A和B、电磁继电器、绿灯和红灯">
+              <defs>
+                <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#7dd3fc" stop-opacity=".8"/>
+                  <stop offset="1" stop-color="#38bdf8" stop-opacity=".55"/>
+                </linearGradient>
+                <linearGradient id="metalGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#a8b4c2"/>
+                  <stop offset="1" stop-color="#64748b"/>
+                </linearGradient>
+                <linearGradient id="coilGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#7c2d12"/>
+                  <stop offset=".28" stop-color="#f59e0b"/>
+                  <stop offset=".55" stop-color="#b45309"/>
+                  <stop offset=".8" stop-color="#fbbf24"/>
+                  <stop offset="1" stop-color="#7c2d12"/>
+                </linearGradient>
+                <radialGradient id="greenHalo">
+                  <stop offset="0" stop-color="#4ade80" stop-opacity=".85"/>
+                  <stop offset=".55" stop-color="#4ade80" stop-opacity=".25"/>
+                  <stop offset="1" stop-color="#4ade80" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="redHalo">
+                  <stop offset="0" stop-color="#f87171" stop-opacity=".85"/>
+                  <stop offset=".55" stop-color="#f87171" stop-opacity=".25"/>
+                  <stop offset="1" stop-color="#f87171" stop-opacity="0"/>
+                </radialGradient>
+                <filter id="blurGlow" x="-80%" y="-80%" width="260%" height="260%">
+                  <feGaussianBlur stdDeviation="12"/>
+                </filter>
+                <pattern id="dotGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+                  <circle cx="2" cy="2" r="1.2" fill="#dbe7e8"/>
+                </pattern>
+                <clipPath id="tankClip">
+                  <path d="M96 150 V540 Q96 552 108 552 H332 Q344 552 344 540 V150 Z"/>
+                </clipPath>
+              </defs>
+
+              <rect x="0" y="0" width="1080" height="660" rx="18" fill="#fbfdfd"/>
+              <rect x="0" y="0" width="1080" height="660" rx="18" fill="url(#dotGrid)" opacity=".7"/>
+
+              <!-- 水箱 -->
+              <g>
+                <path d="M90 150 V540 Q90 562 112 562 H328 Q350 562 350 540 V150" fill="rgba(226,244,245,.45)" stroke="#94a3b8" stroke-width="5"/>
+                <line x1="80" y1="150" x2="360" y2="150" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+                <!-- 水 -->
+                <g clip-path="url(#tankClip)">
+                  <path id="waterFill" d="M96 400 Q137 396 178 400 Q219 404 260 400 Q301 396 344 400 L344 552 L96 552 Z" fill="url(#waterGrad)"/>
+                </g>
+                <!-- 电极 -->
+                <g>
+                  <rect x="120" y="140" width="180" height="9" rx="3" fill="url(#metalGrad)"/>
+                  <line x1="146" y1="148" x2="146" y2="316" stroke="#64748b" stroke-width="5"/>
+                  <rect x="132" y="316" width="28" height="24" rx="3" fill="#475569"/>
+                  <text x="146" y="334" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">A</text>
+                  <line x1="282" y1="148" x2="282" y2="506" stroke="#64748b" stroke-width="5"/>
+                  <rect x="268" y="506" width="28" height="24" rx="3" fill="#475569"/>
+                  <text x="282" y="524" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">B</text>
+                </g>
+                <!-- A 所在水位 -->
+                <line x1="90" y1="340" x2="360" y2="340" stroke="#0ea5e9" stroke-width="1.6" stroke-dasharray="6 6" opacity=".8"/>
+                <text x="170" y="330" class="tag-label small blue">A 所在水位</text>
+                
+              </g>
+
+              <!-- 控制电路导线 -->
+              <g class="wire">
+                <path d="M146 140 V86 H60 V574 H440"/>
+                <path d="M462 574 H540 V457"/>
+                <path d="M282 140 V110 H620 V300 H560 V312"/>
+                <path d="M700 455 V520 H770 V574 H800"/>
+                <path d="M726 251 H740 V170 H890"/>
+                <path d="M726 335 H740 V410 H890"/>
+                <path d="M950 170 H1010 V574 H842"/>
+                <path d="M950 410 H1010"/>
+              </g>
+              <!-- 电流动画 -->
+              <path id="flowControl" class="flow" d="M146 140 V86 H60 V574 H440 M462 574 H540 V457 M560 312 V300 H620 V110 H282 V506 L146 340 V140"/>
+              <path id="flowGreen" class="flow" d="M740 170 H890 M950 170 H1010 V574 H842 M770 574 V520 H700"/>
+              <path id="flowRed" class="flow" d="M740 410 H890 M950 410 H1010 M1010 574 H842 M770 574 V520 H700"/>
+
+              <!-- 控制电路电源 -->
+              <g>
+                <line x1="452" y1="552" x2="452" y2="596" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+                <line x1="462" y1="562" x2="462" y2="586" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+                <text x="457" y="622" text-anchor="middle" class="tag-label small">控制电路电源</text>
+              </g>
+
+              <!-- 继电器底座、立柱、弹簧、线圈 -->
+              <g>
+                <rect x="410" y="435" width="330" height="22" rx="6" fill="url(#metalGrad)" stroke="#475569" stroke-width="1.5"/>
+                <rect x="443" y="255" width="10" height="182" rx="3" fill="url(#metalGrad)" stroke="#475569" stroke-width="1"/>
+
+                <!-- 弹簧 -->
+                <g id="springG">
+                  <path d="M420 438 L410 424 L430 410 L410 396 L430 382 L410 368 L430 354 L410 340 L430 326 L410 312 L420 285"
+                        fill="none" stroke="#64748b" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M420 285 H443" stroke="#64748b" stroke-width="3.4" stroke-linecap="round"/>
+                </g>
+
+                <!-- 线圈 -->
+                <ellipse class="coil-glow" id="coilGlow" cx="520" cy="368" rx="72" ry="86" fill="#f59e0b" filter="url(#blurGlow)"/>
+                <g>
+                  <rect x="480" y="310" width="80" height="124" rx="7" fill="url(#coilGrad)" stroke="#7c2d12" stroke-width="1.4"/>
+                  <g stroke="#7c2d12" stroke-width="1.6" opacity=".55">
+                    <line x1="482" y1="322" x2="558" y2="322"/><line x1="482" y1="334" x2="558" y2="334"/>
+                    <line x1="482" y1="346" x2="558" y2="346"/><line x1="482" y1="358" x2="558" y2="358"/>
+                    <line x1="482" y1="370" x2="558" y2="370"/><line x1="482" y1="382" x2="558" y2="382"/>
+                    <line x1="482" y1="394" x2="558" y2="394"/><line x1="482" y1="406" x2="558" y2="406"/>
+                    <line x1="482" y1="418" x2="558" y2="418"/>
+                  </g>
+                  <ellipse cx="520" cy="310" rx="40" ry="8" fill="#fbbf24" stroke="#7c2d12" stroke-width="1.2"/>
+                  <rect x="505" y="300" width="30" height="12" rx="3" fill="#334155"/>
+                  
+                  <!-- 磁场线 -->
+                  <ellipse id="field1" class="field" cx="520" cy="360" rx="95" ry="104" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5 7"/>
+                  <ellipse id="field2" class="field" cx="520" cy="360" rx="112" ry="122" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="5 9" opacity="0"/>
+                </g>
+              </g>
+
+              <!-- 衔铁与触点（整体上下移动） -->
+              <g id="armature">
+                <rect x="443" y="272" width="257" height="13" rx="3" fill="url(#metalGrad)" stroke="#334155" stroke-width="1.2"/>
+                <rect x="660" y="236" width="8" height="88" rx="2" fill="#64748b" stroke="#334155" stroke-width="1"/>
+                <rect x="660" y="248" width="38" height="6" rx="2" fill="#94a3b8" stroke="#334155" stroke-width="1"/>
+                <rect x="660" y="318" width="38" height="6" rx="2" fill="#94a3b8" stroke="#334155" stroke-width="1"/>
+              </g>
+
+              <!-- 静触点 -->
+              <g>
+                <circle cx="700" cy="251" r="5.5" fill="#f59e0b" stroke="#92400e" stroke-width="1.4"/>
+                <line x1="705" y1="251" x2="726" y2="251" stroke="#475569" stroke-width="3"/>
+                <circle cx="700" cy="335" r="5.5" fill="#f59e0b" stroke="#92400e" stroke-width="1.4"/>
+                <line x1="705" y1="335" x2="726" y2="335" stroke="#475569" stroke-width="3"/>
+                <circle id="contactSpark" cx="700" cy="251" r="9" fill="#fde68a" opacity="0"/>
+              </g>
+
+              <!-- 工作电路：绿灯 -->
+              <g>
+                <line x1="880" y1="170" x2="960" y2="170" stroke="#475569" stroke-width="3"/>
+                <g id="greenLamp" class="lamp green">
+                  <circle class="halo" cx="920" cy="170" r="46" fill="url(#greenHalo)"/>
+                  <g class="rays" stroke="#22c55e" stroke-width="2.4" stroke-linecap="round">
+                    <line x1="920" y1="118" x2="920" y2="130"/><line x1="920" y1="210" x2="920" y2="222"/>
+                    <line x1="868" y1="170" x2="880" y2="170"/><line x1="960" y1="170" x2="972" y2="170"/>
+                    <line x1="883" y1="133" x2="892" y2="142"/><line x1="948" y1="198" x2="957" y2="207"/>
+                    <line x1="957" y1="133" x2="948" y2="142"/><line x1="892" y1="198" x2="883" y2="207"/>
+                  </g>
+                  <circle class="bulb" cx="920" cy="170" r="19" fill="#eef7f1" stroke="#16a34a" stroke-width="3"/>
+                  <path class="filament" d="M912 176 q8 -13 16 0" fill="none" stroke="#15803d" stroke-width="2.2"/>
+                  <rect x="906" y="188" width="28" height="9" rx="2" fill="#94a3b8"/>
+                  <text x="920" y="122" text-anchor="middle" class="tag-label">绿灯</text>
+                </g>
+              </g>
+
+              <!-- 工作电路：红灯 -->
+              <g>
+                <line x1="880" y1="410" x2="960" y2="410" stroke="#475569" stroke-width="3"/>
+                <g id="redLamp" class="lamp red">
+                  <circle class="halo" cx="920" cy="410" r="46" fill="url(#redHalo)"/>
+                  <g class="rays" stroke="#ef4444" stroke-width="2.4" stroke-linecap="round">
+                    <line x1="920" y1="358" x2="920" y2="370"/><line x1="920" y1="450" x2="920" y2="462"/>
+                    <line x1="868" y1="410" x2="880" y2="410"/><line x1="960" y1="410" x2="972" y2="410"/>
+                    <line x1="883" y1="373" x2="892" y2="382"/><line x1="948" y1="438" x2="957" y2="447"/>
+                    <line x1="957" y1="373" x2="948" y2="382"/><line x1="892" y1="438" x2="883" y2="447"/>
+                  </g>
+                  <circle class="bulb" cx="920" cy="410" r="19" fill="#fdf1f1" stroke="#dc2626" stroke-width="3"/>
+                  <path class="filament" d="M912 416 q8 -13 16 0" fill="none" stroke="#b91c1c" stroke-width="2.2"/>
+                  <rect x="906" y="428" width="28" height="9" rx="2" fill="#94a3b8"/>
+                  <text x="920" y="462" text-anchor="middle" class="tag-label">红灯</text>
+                </g>
+              </g>
+
+              <!-- 工作电路电源 -->
+              <g>
+                <line x1="812" y1="552" x2="812" y2="596" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+                <line x1="822" y1="562" x2="822" y2="586" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+                <text x="817" y="622" text-anchor="middle" class="tag-label small">工作电路电源</text>
+              </g>
+
+              <!-- 标注 -->
+              <g>
+                <line x1="560" y1="250" x2="560" y2="268" class="leader"/>
+                <circle cx="560" cy="270" r="2.5" class="leader-dot"/>
+                <text x="560" y="242" text-anchor="middle" class="tag-label">衔铁</text>
+
+                <line x1="394" y1="360" x2="410" y2="360" class="leader"/>
+                <circle cx="412" cy="360" r="2.5" class="leader-dot"/>
+                <text x="390" y="364" text-anchor="end" class="tag-label">弹簧</text>
+
+                <line x1="648" y1="218" x2="664" y2="240" class="leader"/>
+                <circle cx="665" cy="242" r="2.5" class="leader-dot"/>
+                <text x="644" y="212" text-anchor="end" class="tag-label">动触点</text>
+
+                <line x1="752" y1="292" x2="706" y2="256" class="leader"/>
+                <line x1="752" y1="292" x2="706" y2="331" class="leader"/>
+                <text x="760" y="296" class="tag-label">静触点</text>
+
+                <line x1="520" y1="492" x2="520" y2="436" class="leader"/>
+                <circle cx="520" cy="434" r="2.5" class="leader-dot"/>
+                <text x="520" y="510" text-anchor="middle" class="tag-label">电磁铁</text>
+
+                <text x="220" y="618" text-anchor="middle" class="tag-label small">A、B 是金属块（电极），水位到达 A 时 A、B 通过水接通</text>
+              </g>
+            </svg>
+          </div>
+        </article>
+
+        <aside class="card control-card">
+          <div class="status-banner green" id="statusBanner">
+            <div class="status-lamp"></div>
+            <div>
+              <div class="status-title" id="alarmStatusTitle">绿灯亮</div>
+              <div class="status-sub" id="alarmStatusSub">水位低于金属块 A，控制电路断开</div>
+            </div>
+          </div>
+
+          <div class="slider-block">
+            <div class="slider-head"><span>当前水位</span><b id="levelPct">45%</b></div>
+            <div class="slider-wrap">
+              <span class="a-mark">A</span>
+              <input id="waterRange" type="range" min="0" max="100" step="1" value="45" aria-label="水位">
+            </div>
+            <div class="water-scale"><span>低</span><span>高</span></div>
+            <div class="preset-row">
+              <button class="btn ghost small" id="presetHigh">↑ 升到金属块 A</button>
+              <button class="btn ghost small" id="presetLow">↓ 降到 A 以下</button>
+              <button class="btn ghost small" id="autoBtn">自动演示</button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="chain">
+            <div class="chain-step active" id="chainStep1"><span class="n">1</span><span>水位低于金属块 A</span></div>
+            <div class="chain-arrow">▼</div>
+            <div class="chain-step active" id="chainStep2"><span class="n">2</span><span>控制电路断开，线圈无电流</span></div>
+            <div class="chain-arrow">▼</div>
+            <div class="chain-step active" id="chainStep3"><span class="n">3</span><span>电磁铁无磁性，衔铁被弹簧拉起</span></div>
+            <div class="chain-arrow">▼</div>
+            <div class="chain-step active" id="chainStep4"><span class="n">4</span><span>动触点接上静触点，绿灯亮</span></div>
+          </div>
+
+          <p class="note"><b>提示：</b>纯净的水不导电，但一般的水都能导电，所以 A、B 之间有水时控制电路才能接通。</p>
+        </aside>
+      </div>
+
+      <article class="card explain">
+        <div class="explain-head"><span class="tag">标准说明</span><h3>水位自动报警器的工作原理</h3></div>
+        <p>水位没有到达金属块 A 时，金属块 A 与 B 之间是断开的，控制电路中没有电流，电磁铁没有磁性；衔铁在弹簧的作用下抬起，动触点与上方的静触点接触，绿灯所在的工作电路接通，绿灯亮。</p>
+        <p>当水位到达金属块 A 时，<b>一般的水能导电</b>，A、B 之间通过水接通，控制电路中有电流，电磁铁产生磁性，吸引衔铁向下；动触点与下方的静触点接触，红灯所在的工作电路接通，红灯亮，绿灯熄灭。</p>
+        <p>水位下降后，A、B 重新断开，电磁铁失去磁性，衔铁在弹簧作用下复位，绿灯再次亮起——这就是水位自动报警器的自动控制过程。</p>
+        <div class="answer-note"><b>要点：</b>电磁继电器实质上是一个由电磁铁控制的开关，可以用低电压、弱电流的控制电路去控制高电压、强电流的工作电路。</div>
+      </article>
+    </section>
+
+    <!-- ================= 装置二 ================= -->
+    <section class="device" id="bell">
+      <div class="device-head">
+        <div class="device-num">02</div>
+        <div>
+          <h2>直流电铃</h2>
+          <p>图 20.3-9 · 触点通断，让衔铁上下振动，小锤连续敲击铃碗</p>
+        </div>
+        <div class="device-tags">
+          <span class="d-tag">电磁铁</span>
+          <span class="d-tag">弹性片 + 触点</span>
+          <span class="d-tag">自动往复振动</span>
+        </div>
+      </div>
+
+      <div class="device-grid">
+        <article class="card stage-card">
+          <div class="stage-head">
+            <div class="stage-title"><span class="tag">图 20.3-9</span>循环动画</div>
+            <span class="stage-hint">慢动作观察“吸合—敲击—断电—复位”</span>
+          </div>
+          <div class="stage-body">
+            <svg id="bellSvg" class="stage-svg" viewBox="0 0 980 640" role="img" aria-label="直流电铃动画：电磁铁、衔铁B、弹性片A、触点螺钉、小锤、铃碗和电源">
+              <defs>
+                <linearGradient id="metalGrad2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#a8b4c2"/>
+                  <stop offset="1" stop-color="#5b6779"/>
+                </linearGradient>
+                <linearGradient id="coilGrad2" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#7c2d12"/>
+                  <stop offset=".3" stop-color="#f59e0b"/>
+                  <stop offset=".55" stop-color="#b45309"/>
+                  <stop offset=".8" stop-color="#fbbf24"/>
+                  <stop offset="1" stop-color="#7c2d12"/>
+                </linearGradient>
+                <radialGradient id="gongGrad" cx="38%" cy="32%" r="80%">
+                  <stop offset="0" stop-color="#fef3c7"/>
+                  <stop offset=".45" stop-color="#fbbf24"/>
+                  <stop offset=".8" stop-color="#d97706"/>
+                  <stop offset="1" stop-color="#92400e"/>
+                </radialGradient>
+                <filter id="blurGlow2" x="-80%" y="-80%" width="260%" height="260%">
+                  <feGaussianBlur stdDeviation="12"/>
+                </filter>
+                <pattern id="dotGrid2" width="24" height="24" patternUnits="userSpaceOnUse">
+                  <circle cx="2" cy="2" r="1.2" fill="#dbe7e8"/>
+                </pattern>
+              </defs>
+
+              <rect x="0" y="0" width="980" height="640" rx="18" fill="#fbfdfd"/>
+              <rect x="0" y="0" width="980" height="640" rx="18" fill="url(#dotGrid2)" opacity=".7"/>
+
+              <!-- 导线 -->
+              <g class="wire">
+                <path d="M126 560 H700 V500 H600"/>
+                <path d="M112 560 H90 V120 H300"/>
+                <path d="M372 120 H690 V160"/>
+                <path d="M330 296 V380 H452"/>
+              </g>
+              <path id="flowBellTop" class="flow" d="M90 560 V120 H690 V266"/>
+              <path id="flowBellBot" class="flow" d="M126 560 H700 V500 H600"/>
+
+              <!-- 电源 -->
+              <g>
+                <line x1="112" y1="540" x2="112" y2="580" stroke="#475569" stroke-width="4.5" stroke-linecap="round"/>
+                <line x1="126" y1="550" x2="126" y2="570" stroke="#475569" stroke-width="4.5" stroke-linecap="round"/>
+                <text x="119" y="610" text-anchor="middle" class="tag-label small">电源</text>
+              </g>
+
+              <!-- 开关 -->
+              <g>
+                <circle cx="300" cy="120" r="5" fill="#475569"/>
+                <circle cx="372" cy="120" r="5" fill="#475569"/>
+                <line id="switchLever" x1="300" y1="120" x2="370" y2="120" stroke="#334155" stroke-width="5" stroke-linecap="round" style="transform-box:fill-box;transform-origin:0% 100%;transition:transform .3s"/>
+                <text x="336" y="92" text-anchor="middle" class="tag-label">开关</text>
+              </g>
+
+              <!-- 电磁铁 -->
+              <g>
+                <ellipse id="coilGlowBell" class="coil-glow" cx="530" cy="410" rx="120" ry="130" fill="#f59e0b" filter="url(#blurGlow2)"/>
+                <!-- U 形铁芯 -->
+                <path d="M462 322 V500 Q462 548 510 548 H562 Q610 548 610 500 V322" fill="none" stroke="#4b5563" stroke-width="40" stroke-linejoin="round"/>
+                <path d="M462 322 V500 Q462 548 510 548 H562 Q610 548 610 500 V322" fill="none" stroke="#6b7280" stroke-width="30" stroke-linejoin="round"/>
+                <!-- 线圈 -->
+                <rect x="443" y="352" width="38" height="102" rx="6" fill="url(#coilGrad2)" stroke="#7c2d12" stroke-width="1.2"/>
+                <rect x="591" y="352" width="38" height="102" rx="6" fill="url(#coilGrad2)" stroke="#7c2d12" stroke-width="1.2"/>
+                <g stroke="#7c2d12" stroke-width="1.4" opacity=".5">
+                  <line x1="444" y1="366" x2="480" y2="366"/><line x1="444" y1="380" x2="480" y2="380"/>
+                  <line x1="444" y1="394" x2="480" y2="394"/><line x1="444" y1="408" x2="480" y2="408"/>
+                  <line x1="444" y1="422" x2="480" y2="422"/><line x1="444" y1="436" x2="480" y2="436"/>
+                  <line x1="592" y1="366" x2="628" y2="366"/><line x1="592" y1="380" x2="628" y2="380"/>
+                  <line x1="592" y1="394" x2="628" y2="394"/><line x1="592" y1="408" x2="628" y2="408"/>
+                  <line x1="592" y1="422" x2="628" y2="422"/><line x1="592" y1="436" x2="628" y2="436"/>
+                </g>
+                <!-- 磁场线 -->
+                <ellipse id="fieldB1" class="field" cx="530" cy="400" rx="125" ry="140" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5 8"/>
+              </g>
+
+              <!-- 弹性片 A + 衔铁 B + 小锤（整体绕左端转动） -->
+              <g id="stripGroup" style="transform-box:view-box;transform-origin:330px 282px">
+                <!-- 固定块 -->
+                <rect x="314" y="268" width="34" height="28" rx="4" fill="url(#metalGrad2)" stroke="#334155" stroke-width="1.4"/>
+                <!-- 弹性片 -->
+                <path d="M346 282 H610 L650 268 H742" fill="none" stroke="#64748b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M346 279 H610 L650 265 H742" fill="none" stroke="#a8b4c2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+                <!-- 衔铁 -->
+                <rect x="452" y="296" width="160" height="17" rx="4" fill="url(#metalGrad2)" stroke="#334155" stroke-width="1.2"/>
+                <rect x="470" y="284" width="12" height="12" fill="#64748b"/>
+                <rect x="582" y="284" width="12" height="12" fill="#64748b"/>
+                <!-- 小锤 -->
+                <line x1="742" y1="268" x2="752" y2="274" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+                <circle id="hammerBall" cx="754" cy="281" r="10" fill="#57534e" stroke="#292524" stroke-width="2"/>
+              </g>
+
+              <!-- 触点螺钉 -->
+              <g>
+                <rect x="668" y="148" width="44" height="12" rx="3" fill="url(#metalGrad2)" stroke="#475569" stroke-width="1"/>
+                <rect x="686" y="158" width="9" height="96" fill="#71717a" stroke="#3f3f46" stroke-width="1"/>
+                <path d="M686 254 L695 254 L691 264 L690 264 Z" fill="#a1a1aa" stroke="#3f3f46" stroke-width="1"/>
+                <circle cx="691" cy="266" r="4" fill="#d4d4d8" stroke="#3f3f46" stroke-width="1"/>
+                <circle id="contactSparkBell" cx="691" cy="266" r="11" fill="#fde68a" opacity="0"/>
+              </g>
+
+              <!-- 铃碗 -->
+              <g>
+                <circle id="gong" cx="810" cy="360" r="76" fill="url(#gongGrad)" stroke="#92400e" stroke-width="3"/>
+                <circle cx="810" cy="360" r="64" fill="none" stroke="#b45309" stroke-width="1.6" opacity=".6"/>
+                <circle cx="810" cy="360" r="48" fill="none" stroke="#b45309" stroke-width="1.2" opacity=".45"/>
+                <circle cx="810" cy="360" r="9" fill="#fde68a" stroke="#b45309" stroke-width="1.6"/>
+                <rect x="886" y="352" width="26" height="16" rx="3" fill="#94a3b8" stroke="#475569" stroke-width="1.2"/>
+                <g id="gongRipple">
+                  <circle class="ripple r1" cx="810" cy="360" r="80" fill="none" stroke="#f59e0b" stroke-width="2.5" opacity="0"/>
+                  <circle class="ripple r2" cx="810" cy="360" r="80" fill="none" stroke="#f59e0b" stroke-width="2" opacity="0"/>
+                </g>
+                <!-- 声波 -->
+                <g id="soundWaves" stroke="#f59e0b" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0">
+                  <path d="M898 320 q16 40 0 80"/>
+                  <path d="M918 306 q24 54 0 108"/>
+                </g>
+              </g>
+
+              <!-- 标注 -->
+              <g>
+                <line x1="430" y1="248" x2="470" y2="278" class="leader"/>
+                <circle cx="472" cy="280" r="2.5" class="leader-dot"/>
+                <text x="422" y="242" text-anchor="middle" class="tag-label">弹性片 A</text>
+
+                <line x1="636" y1="334" x2="614" y2="312" class="leader"/>
+                <circle cx="612" cy="310" r="2.5" class="leader-dot"/>
+                <text x="640" y="338" class="tag-label">衔铁 B</text>
+
+                <line x1="642" y1="190" x2="684" y2="232" class="leader"/>
+                <circle cx="684" cy="234" r="2.5" class="leader-dot"/>
+                <text x="636" y="186" text-anchor="end" class="tag-label">螺钉（触点）</text>
+
+                <line x1="770" y1="242" x2="752" y2="268" class="leader"/>
+                <circle cx="752" cy="270" r="2.5" class="leader-dot"/>
+                <text x="774" y="238" class="tag-label">小锤</text>
+
+                <line x1="860" y1="286" x2="836" y2="312" class="leader"/>
+                <circle cx="834" cy="314" r="2.5" class="leader-dot"/>
+                <text x="866" y="282" class="tag-label">铃碗</text>
+
+                <line x1="430" y1="500" x2="458" y2="470" class="leader"/>
+                <circle cx="460" cy="468" r="2.5" class="leader-dot"/>
+                <text x="420" y="512" text-anchor="end" class="tag-label">电磁铁</text>
+              </g>
+            </svg>
+          </div>
+        </article>
+
+        <aside class="card control-card">
+          <div class="ctrl-title">电源与运行</div>
+          <button class="power-btn on" id="powerBtn"><span class="pdot"></span><span id="powerState">电源闭合 · 电铃运行中</span></button>
+
+          <div>
+            <div class="ctrl-title" style="margin-bottom:6px">演示速度</div>
+            <div class="speed-row">
+              <button class="btn" data-speed="0.35">慢动作</button>
+              <button class="btn active" data-speed="1">正常</button>
+              <button class="btn" data-speed="1.8">快进</button>
+            </div>
+          </div>
+
+          <div class="mini-grid">
+            <div class="mini"><div class="k">敲击次数</div><div class="v" id="strikeCount">0 <small>次</small></div></div>
+            <div class="mini"><div class="k">触点状态</div><div class="v" id="contactState" style="font-size:14px">闭合</div></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="ctrl-title">工作循环</div>
+          <ol class="phases">
+            <li class="phase" data-phase="pull"><span class="ph-dot"></span><span><b>① 通电吸合</b>电磁铁有磁性，吸引衔铁 B 向下</span></li>
+            <li class="phase" data-phase="strike"><span class="ph-dot"></span><span><b>② 敲击铃碗</b>小锤敲击铃碗，同时触点断开</span></li>
+            <li class="phase" data-phase="reset"><span class="ph-dot"></span><span><b>③ 断电复位</b>电磁铁失磁，弹性片弹回</span></li>
+            <li class="phase" data-phase="reconnect"><span class="ph-dot"></span><span><b>④ 重新接通</b>触点闭合，再次通电，循环往复</span></li>
+          </ol>
+
+          <div style="display:flex;gap:8px;margin-top:2px">
+            <button class="btn ghost small" id="soundBtn" style="flex:1">🔔 声音：关</button>
+          </div>
+
+          <p class="note"><b>提示：</b>电铃发声不是“一直通电”，而是靠触点不断通断，让电磁铁反复吸放衔铁。</p>
+        </aside>
+      </div>
+
+      <article class="card explain">
+        <div class="explain-head"><span class="tag">标准说明</span><h3>直流电铃的工作原理</h3></div>
+        <p>闭合开关，电流通过电磁铁的线圈，电磁铁产生磁性，吸引衔铁 B 向下运动；衔铁带动弹性片 A 向下弯曲，小锤敲击铃碗发声。</p>
+        <p>与此同时，弹性片 A 与螺钉（触点）分离，电路断开，电磁铁失去磁性；衔铁在弹性片的弹力作用下复位，弹性片重新与螺钉接触，电路再次接通。</p>
+        <p>于是，衔铁不断上下振动，小锤连续敲击铃碗，电铃就持续发声了。这个过程可以概括为：<b>通电 → 吸合衔铁 → 敲击铃碗 → 触点断开 → 断电复位 → 再次接通</b>，如此往复。</p>
+        <div class="answer-note"><b>要点：</b>电铃能自动连续敲击，关键是“弹性片 + 触点”构成的自动通断装置；若触点始终接触，衔铁被吸住后就不会再振动。</div>
+      </article>
+    </section>
+
+    <!-- 原题 -->
+    <section class="card original">
+      <details>
+        <summary><span class="tag">教材原题</span>题目原文与课本扫描</summary>
+        <div class="original-body">
+          <p><span class="qnum">2</span>　图 20.3-8 是一种水位自动报警器的原理图。水位没有到达金属块 A 时，绿灯亮；水位到达金属块 A 时，红灯亮。请说明它的工作原理。注意：虽然纯净的水是不导电的，但一般的水都能导电。</p>
+          <p><span class="qnum">3</span>　图 20.3-9 是直流电铃的原理图。衔铁 B 与弹性片 A 相连，自然情况下弹性片是和螺钉接触的。接通电源后电磁铁吸引衔铁，敲击铃碗发声，同时弹性片与螺钉分离导致断电，电磁铁失去磁性后弹性片又和螺钉接触而通电，如此往复。弄懂原理后，请你在图 20.3-6 所示的电磁继电器上把电源连在电路里，使衔铁能上下振动。</p>
+          <img src="assets/p1-scan.jpg" alt="教材第 20.3 节水位自动报警器与直流电铃原题">
+        </div>
+      </details>
+    </section>
+
+    <footer class="footer">
+      依据九年级物理教材 图 20.3-8、图 20.3-9 制作 · 动画与部件标注用于课堂演示<br>
+      <b>水位自动报警器 · 直流电铃 · 电磁继电器原理</b>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const lerp = (a,b,t) => a + (b-a)*t;
+
+  /* ============================================================
+     一、水位自动报警器
+     ============================================================ */
+  const A_LEVEL = 61.5;          // 金属块 A 对应的水位百分比
+  const LEVEL_MIN_Y = 545;       // 水位 0% 时的水面 y
+  const LEVEL_MAX_Y = 210;       // 水位 100% 时的水面 y
+
+  const alarm = {
+    level: 45,        // 当前水位 0~100
+    target: 45,       // 目标水位
+    auto: false,
+    energized: false,
+    armOffset: 0,
+    time: 0
+  };
+
+  const waterFill = $('waterFill');
+  const armature = $('armature');
+  const springG = $('springG');
+  const coilGlow = $('coilGlow');
+  const fields = [$('field1'), $('field2')];
+  const greenLamp = $('greenLamp');
+  const redLamp = $('redLamp');
+  const flowControl = $('flowControl');
+  const flowGreen = $('flowGreen');
+  const flowRed = $('flowRed');
+  const waterRange = $('waterRange');
+  const levelPct = $('levelPct');
+  const autoBtn = $('autoBtn');
+  const statusBanner = $('statusBanner');
+  const alarmStatusTitle = $('alarmStatusTitle');
+  const alarmStatusSub = $('alarmStatusSub');
+  const chainSteps = [$('chainStep1'), $('chainStep2'), $('chainStep3'), $('chainStep4')];
+
+  function levelToY(p){
+    return LEVEL_MIN_Y - (LEVEL_MIN_Y - LEVEL_MAX_Y) * (p / 100);
+  }
+
+  function waterPath(y, t){
+    const x0 = 96, x1 = 344, seg = (x1 - x0) / 6;
+    let d = 'M' + x0 + ' ' + y.toFixed(1);
+    for (let i = 0; i < 6; i++){
+      const dy = (i % 2 ? 2.4 : -2.4) * (0.7 + 0.3 * Math.sin(t * 2 + i * 1.4));
+      d += ' q ' + (seg/2).toFixed(1) + ' ' + dy.toFixed(1) + ' ' + seg.toFixed(1) + ' 0';
+    }
+    d += ' L' + x1 + ' 552 L' + x0 + ' 552 Z';
+    return d;
+  }
+
+  function setAlarmState(on){
+    if (alarm.energized === on) return;
+    alarm.energized = on;
+    greenLamp.classList.toggle('on', !on);
+    redLamp.classList.toggle('on', on);
+    coilGlow.classList.toggle('on', on);
+    fields.forEach(f => f.classList.toggle('on', on));
+    flowControl.classList.toggle('on', on);
+    flowGreen.classList.toggle('on', !on);
+    flowRed.classList.toggle('on', on);
+
+    statusBanner.className = 'status-banner ' + (on ? 'red' : 'green');
+    alarmStatusTitle.textContent = on ? '红灯亮' : '绿灯亮';
+    alarmStatusSub.textContent = on
+      ? '水位到达金属块 A，控制电路接通，电磁铁吸下衔铁'
+      : '水位低于金属块 A，控制电路断开，衔铁被弹簧拉起';
+
+    const texts = on ? [
+      '水位到达金属块 A',
+      '水导电，A、B 接通，控制电路有电流',
+      '电磁铁有磁性，吸引衔铁向下',
+      '动触点接下静触点，红灯亮'
+    ] : [
+      '水位低于金属块 A',
+      'A、B 断开，控制电路无电流',
+      '电磁铁无磁性，衔铁被弹簧拉起',
+      '动触点接上静触点，绿灯亮'
+    ];
+    chainSteps.forEach((el, i) => {
+      el.querySelector('span:last-child').textContent = texts[i];
+      el.classList.toggle('active', true);
+      el.classList.toggle('red', on);
+    });
+  }
+
+  function setLevel(v){
+    alarm.target = clamp(v, 0, 100);
+    waterRange.value = Math.round(alarm.target);
+    levelPct.textContent = Math.round(alarm.target) + '%';
+    waterRange.style.setProperty('--p', alarm.target + '%');
+  }
+
+  waterRange.addEventListener('input', e => {
+    alarm.auto = false;
+    autoBtn.classList.remove('active');
+    autoBtn.textContent = '自动演示';
+    setLevel(Number(e.target.value));
+  });
+
+  autoBtn.addEventListener('click', () => {
+    alarm.auto = !alarm.auto;
+    autoBtn.classList.toggle('active', alarm.auto);
+    autoBtn.textContent = alarm.auto ? '暂停自动' : '自动演示';
+  });
+
+  $('presetHigh').addEventListener('click', () => {
+    alarm.auto = false;
+    autoBtn.classList.remove('active');
+    autoBtn.textContent = '自动演示';
+    setLevel(80);
+  });
+  $('presetLow').addEventListener('click', () => {
+    alarm.auto = false;
+    autoBtn.classList.remove('active');
+    autoBtn.textContent = '自动演示';
+    setLevel(40);
+  });
+
+  /* ============================================================
+     二、直流电铃
+     ============================================================ */
+  const bell = {
+    power: true,
+    speed: 1,
+    t: 0,
+    strikes: 0,
+    sound: false,
+    running: 0
+  };
+  const stripGroup = $('stripGroup');
+  const gong = $('gong') || document.querySelector('#bellSvg circle[r="76"]');
+  const gongRipple = $('gongRipple');
+  const soundWaves = $('soundWaves');
+  const contactSparkBell = $('contactSparkBell');
+  const coilGlowBell = $('coilGlowBell');
+  const fieldB1 = $('fieldB1');
+  const flowBellTop = $('flowBellTop');
+  const flowBellBot = $('flowBellBot');
+  const switchLever = $('switchLever');
+  const powerBtn = $('powerBtn');
+  const powerState = $('powerState');
+  const strikeCount = $('strikeCount');
+  const contactState = $('contactState');
+  const phases = Array.from(document.querySelectorAll('.phase'));
+  const speedBtns = Array.from(document.querySelectorAll('[data-speed]'));
+
+  function easeInOut(x){
+    return x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2)/2;
+  }
+
+  function setPower(on){
+    bell.power = on;
+    powerBtn.classList.toggle('on', on);
+    powerState.textContent = on ? '电源闭合 · 电铃运行中' : '电源断开 · 已停止';
+    switchLever.style.transform = on ? 'rotate(0deg)' : 'rotate(-32deg)';
+    if (on) bell.t = 0;
+    flowBellTop.classList.remove('on');
+    flowBellBot.classList.remove('on');
+    if (!on){
+      contactState.textContent = '断开';
+      contactState.style.color = '#b91c1c';
+      phases.forEach(el => el.classList.remove('active'));
+    }
+  }
+
+  powerBtn.addEventListener('click', () => setPower(!bell.power));
+
+  speedBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      bell.speed = Number(btn.dataset.speed);
+      speedBtns.forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+
+  $('soundBtn').addEventListener('click', function(){
+    bell.sound = !bell.sound;
+    this.textContent = bell.sound ? '🔔 声音：开' : '🔔 声音：关';
+    this.classList.toggle('active', bell.sound);
+    if (bell.sound) playDing(0.001);
+  });
+
+  let audioCtx = null;
+  function playDing(vol){
+    if (!bell.sound && vol !== 0.001) return;
+    try{
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const t = audioCtx.currentTime;
+      const freqs = [880, 1320, 1760];
+      freqs.forEach((f, i) => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = 'sine';
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.02, 0.16/(i+1)), t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+        o.connect(g).connect(audioCtx.destination);
+        o.start(t);
+        o.stop(t + 0.95);
+      });
+    }catch(err){ /* 忽略音频错误 */ }
+  }
+
+  function strikeBell(){
+    bell.strikes++;
+    strikeCount.innerHTML = bell.strikes + ' <small>次</small>';
+    if (gong){
+      gong.classList.remove('ring');
+      void gong.getBoundingClientRect();
+      gong.classList.add('ring');
+    }
+    if (gongRipple){
+      gongRipple.classList.remove('go');
+      void gongRipple.getBoundingClientRect();
+      gongRipple.classList.add('go');
+    }
+    if (soundWaves){
+      soundWaves.classList.remove('go');
+      void soundWaves.getBoundingClientRect();
+      soundWaves.classList.add('go');
+    }
+    playDing();
+  }
+
+  /* ============================================================
+     三、主循环
+     ============================================================ */
+  let last = performance.now();
+  let flowOffsetA = 0, flowOffsetB = 0;
+
+  function frame(now){
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+
+    /* ---- 水位报警器 ---- */
+    if (alarm.auto){
+      const v = 50 + 34 * Math.sin(now / 1000 * 0.85);
+      setLevel(v);
+    }
+    alarm.level = lerp(alarm.level, alarm.target, Math.min(1, dt * 1.8));
+    const y = levelToY(alarm.level);
+    waterFill.setAttribute('d', waterPath(y, now / 1000));
+    const on = alarm.level >= A_LEVEL;
+    setAlarmState(on);
+
+    alarm.armOffset = lerp(alarm.armOffset, on ? 14 : 0, Math.min(1, dt * 9));
+    armature.setAttribute('transform', 'translate(0 ' + alarm.armOffset.toFixed(2) + ')');
+    const springScale = (128 - alarm.armOffset) / 128;
+    springG.setAttribute('transform', 'translate(420 440) scale(1 ' + springScale.toFixed(3) + ') translate(-420 -440)');
+
+    if (alarm.level !== Number(waterRange.value)){
+      waterRange.value = Math.round(alarm.level);
+      levelPct.textContent = Math.round(alarm.level) + '%';
+      waterRange.style.setProperty('--p', alarm.level + '%');
+    }
+
+    flowOffsetA -= dt * (40 + 40 * 1.2);
+    flowControl.setAttribute('stroke-dashoffset', flowOffsetA.toFixed(1));
+    flowGreen.setAttribute('stroke-dashoffset', flowOffsetA.toFixed(1));
+    flowRed.setAttribute('stroke-dashoffset', flowOffsetA.toFixed(1));
+
+    /* ---- 电铃 ---- */
+    if (bell.power){
+      const period = 2.0 / bell.speed;
+      const prev = bell.t;
+      bell.t += dt / period;
+      if (bell.t >= 1) bell.t -= 1;
+      if (prev < 0.34 && bell.t >= 0.34) strikeBell();
+    }
+
+    let p = 0;
+    if (bell.power){
+      const t = bell.t;
+      if (t < 0.34) p = easeInOut(t / 0.34);
+      else if (t < 0.46) p = 1;
+      else if (t < 0.82) p = 1 - easeInOut((t - 0.46) / 0.36);
+      else p = 0;
+    } else {
+      p = 0;
+    }
+    const angle = 3.2 * p;
+    stripGroup.setAttribute('transform', 'rotate(' + angle.toFixed(3) + ' 330 282)');
+
+    const currentOn = bell.power && (bell.t < 0.34 || bell.t >= 0.82);
+    coilGlowBell.classList.toggle('on', currentOn);
+    fieldB1.classList.toggle('on', currentOn);
+    flowBellTop.classList.toggle('on', currentOn);
+    flowBellBot.classList.toggle('on', currentOn);
+
+    let phaseKey = '';
+    if (!bell.power) phaseKey = '';
+    else if (bell.t < 0.34) phaseKey = 'pull';
+    else if (bell.t < 0.46) phaseKey = 'strike';
+    else if (bell.t < 0.82) phaseKey = 'reset';
+    else phaseKey = 'reconnect';
+    phases.forEach(el => el.classList.toggle('active', el.dataset.phase === phaseKey));
+
+    if (contactState){
+      const isClosed = bell.power && (bell.t < 0.34 || bell.t >= 0.82);
+      contactState.textContent = bell.power ? (isClosed ? '闭合' : '断开') : '断开';
+      contactState.style.color = isClosed ? '#0f766e' : '#b91c1c';
+    }
+
+    flowOffsetB -= dt * 70;
+    flowBellTop.setAttribute('stroke-dashoffset', flowOffsetB.toFixed(1));
+    flowBellBot.setAttribute('stroke-dashoffset', flowOffsetB.toFixed(1));
+
+    requestAnimationFrame(frame);
+  }
+
+  /* 初始状态 */
+  setLevel(45);
+  setAlarmState(false);
+  greenLamp.classList.add('on');
+  flowGreen.classList.add('on');
+  setPower(true);
+  frame(performance.now());
+})();
+</script>
+
+<style>
+  /* 电铃敲击动画 */
+  #gong.ring{animation:gongShake .42s ease}
+  @keyframes gongShake{
+    0%,100%{transform:translateX(0) rotate(0deg)}
+    25%{transform:translateX(-3px) rotate(-1.2deg)}
+    50%{transform:translateX(3px) rotate(1deg)}
+    75%{transform:translateX(-2px) rotate(-.6deg)}
+  }
+  #gong{transform-box:fill-box;transform-origin:center}
+  #gongRipple .ripple{transform-box:fill-box;transform-origin:center}
+  #gongRipple.go .r1{animation:rippleOut .9s ease-out}
+  #gongRipple.go .r2{animation:rippleOut .9s ease-out .18s}
+  @keyframes rippleOut{
+    0%{opacity:.8;transform:scale(.2)}
+    100%{opacity:0;transform:scale(1.15)}
+  }
+  #soundWaves.go{animation:soundPulse .9s ease-out}
+  @keyframes soundPulse{
+    0%{opacity:.9;transform:translateX(-6px)}
+    100%{opacity:0;transform:translateX(16px)}
+  }
+  #soundWaves{transform-box:fill-box;transform-origin:left center}
+</style>
+</body>
+</html>
