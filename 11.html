@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>击打力测量电路 · 第 34 题互动还原</title>
+<style>
+  :root{
+    --ink:#0f172a;
+    --ink2:#334155;
+    --muted:#64748b;
+    --line:#e6eaf2;
+    --primary:#4f46e5;
+    --primary-2:#6366f1;
+    --primary-soft:#eef2ff;
+    --accent:#f97316;
+    --amber:#b45309;
+    --danger:#dc2626;
+    --ok:#059669;
+    --card:#ffffff;
+    --radius:20px;
+    --shadow:0 22px 50px -30px rgba(15,23,42,.38), 0 2px 10px rgba(15,23,42,.04);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+    color:var(--ink);
+    line-height:1.55;
+    background:
+      radial-gradient(1100px 560px at 8% -12%, #e0e7ff 0%, rgba(224,231,255,0) 62%),
+      radial-gradient(900px 520px at 102% -6%, #ffedd5 0%, rgba(255,237,213,0) 58%),
+      #f6f7fb;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:1240px;margin:0 auto;padding:26px clamp(16px,3vw,34px) 72px}
+
+  /* ---------- 头图 ---------- */
+  .hero{padding:14px 2px 26px}
+  .eyebrow{font-size:12.5px;letter-spacing:.22em;font-weight:700;color:var(--primary);text-transform:uppercase}
+  h1{font-size:clamp(27px,3.4vw,40px);line-height:1.22;margin:10px 0 12px;letter-spacing:-.01em;font-weight:800}
+  h1 .grad{background:linear-gradient(115deg,#4f46e5 10%,#0ea5e9 55%,#f97316 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{max-width:780px;color:#475569;font-size:15px;line-height:1.75;margin:0 0 18px}
+  .sub b{color:var(--ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:rgba(255,255,255,.9);border:1px solid rgba(148,163,184,.28);font-size:13px;color:#475569;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .chip b{color:var(--primary);font-weight:800;font-variant-numeric:tabular-nums}
+
+  /* ---------- 卡片 ---------- */
+  .card{
+    min-width:0;
+    background:rgba(255,255,255,.95);
+    border:1px solid rgba(148,163,184,.20);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    animation:rise .6s cubic-bezier(.2,.7,.3,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:17px 20px 10px}
+  .card-title{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;color:#1e293b;letter-spacing:.01em}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--primary);background:var(--primary-soft);padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .card-sub{font-size:12px;color:var(--muted);text-align:right;line-height:1.5;max-width:230px}
+
+  /* ---------- 第一行 ---------- */
+  .lab{display:grid;grid-template-columns:1.06fr .94fr;gap:22px;margin-bottom:22px;scroll-margin-top:20px;min-width:0}
+  .lab>*,.work>*{min-width:0}
+  .circuit-wrap{padding:2px 12px 0}
+  svg.circuit{width:100%;height:auto;display:block}
+  svg.circuit text{font-family:inherit}
+  .lbl{font-size:15px;fill:#475569;font-weight:700}
+  .val{font-size:14px;fill:#64748b;font-variant-numeric:tabular-nums}
+  .val.small{font-size:12.5px}
+  .val.tiny{font-size:11px}
+  .rname{font-size:19px;font-style:italic;fill:#4f46e5;font-weight:800}
+
+  .formula-bar{margin:6px 18px 10px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:12.5px;color:#334155;display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+  .formula-bar .fb-label{font-size:10.5px;font-weight:800;color:var(--primary);background:var(--primary-soft);padding:2px 7px;border-radius:6px;letter-spacing:.08em;white-space:nowrap}
+  .formula-bar b{color:var(--primary);font-size:15px}
+  .formula-bar.over b{color:var(--danger)}
+  .circuit-tip{margin:0;padding:0 20px 16px;font-size:12px;color:var(--muted)}
+  .circuit-tip b{color:#475569}
+
+  .gauge-card{display:flex;flex-direction:column}
+  .gauge-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:0 14px}
+  .gauge{width:100%;height:auto;display:block;overflow:visible}
+  .gauge-value{font-size:32px;font-weight:800;fill:#0f172a;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .gauge-value.danger-text{fill:var(--danger)}
+  .gauge.over{animation:gaugeShake .36s ease-in-out 3}
+  @keyframes gaugeShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2.5px)}75%{transform:translateX(2.5px)}}
+
+  .status{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;letter-spacing:.02em}
+  .status.ok{background:#ecfdf5;color:#047857;box-shadow:inset 0 0 0 1px #a7f3d0}
+  .status.warn{background:#fff7ed;color:#c2410c;box-shadow:inset 0 0 0 1px #fed7aa}
+  .status.danger{background:#fef2f2;color:#b91c1c;box-shadow:inset 0 0 0 1px #fecaca;animation:pulse 1.3s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:10px 18px 0}
+  .stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:9px 11px;display:flex;flex-direction:column;gap:1px;min-width:0}
+  .stat-k{font-size:11px;color:var(--muted)}
+  .stat-v{font-size:16px;font-weight:800;color:#1e293b;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .gauge-hint{margin:10px 18px 16px;font-size:11.5px;line-height:1.6;color:var(--muted);border-top:1px dashed var(--line);padding-top:9px}
+  .gauge-hint b{color:#475569}
+
+  /* ---------- 第二行 ---------- */
+  .work{display:grid;grid-template-columns:1.32fr .68fr;gap:22px;margin-bottom:26px}
+  .graph-wrap{padding:2px 16px 12px}
+  svg.graph{width:100%;height:auto;display:block;cursor:crosshair;touch-action:pan-y}
+  .tick{font-size:12.5px;fill:#64748b;font-variant-numeric:tabular-nums}
+  .axis-title{font-size:14px;fill:#334155;font-weight:700}
+  #mLabelF{font-size:13px;font-weight:800;fill:#0f172a}
+  #mLabelR{font-size:12.5px;font-weight:700;fill:#ea580c}
+  #limitText{font-size:11px;font-weight:700;fill:#b45309}
+
+  /* ---------- 操作台 ---------- */
+  .control-card{display:flex;flex-direction:column}
+  .control-body{padding:2px 20px 20px;display:flex;flex-direction:column;flex:1}
+  .force-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:2px}
+  .force-row>span:first-child{font-size:13px;color:var(--muted);font-weight:600}
+  .force-big{font-size:14px;color:var(--muted);font-weight:700}
+  .force-big b{font-size:34px;color:var(--primary);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-right:2px}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:10px;border-radius:999px;margin:16px 0 6px;outline:none;cursor:pointer;
+    background:linear-gradient(90deg,var(--primary) 0%,var(--primary) var(--p,20%),#e2e8f0 var(--p,20%),#e2e8f0 100%);
+  }
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:5px solid var(--primary);box-shadow:0 6px 14px rgba(79,70,229,.35);cursor:grab;transition:transform .15s}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.08)}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:5px solid var(--primary);box-shadow:0 6px 14px rgba(79,70,229,.35);cursor:grab}
+  input[type=range]::-moz-range-track{height:10px;border-radius:999px;background:#e2e8f0}
+  .range-ticks{display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8;margin-bottom:14px;font-variant-numeric:tabular-nums}
+  .quick-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+  .qbtn{flex:1;min-width:58px;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:11.5px;font-weight:700;color:#475569;cursor:pointer;font-family:inherit;transition:.18s;white-space:nowrap}
+  .qbtn:hover{border-color:#c7d2fe;color:var(--primary);background:#f8faff}
+  .qbtn.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 6px 14px -6px rgba(79,70,229,.6)}
+
+  .btn{border:none;font-family:inherit;cursor:pointer;border-radius:12px;font-weight:800;transition:transform .15s,box-shadow .2s,background .2s,color .2s;font-size:14px}
+  .btn:active{transform:translateY(1px)}
+  .btn.hit{width:100%;padding:14px;font-size:15.5px;border-radius:14px;background:linear-gradient(135deg,#f97316,#fb923c);color:#fff;box-shadow:0 16px 28px -14px rgba(249,115,22,.75);letter-spacing:.03em}
+  .btn.hit:hover{box-shadow:0 18px 32px -12px rgba(249,115,22,.8);transform:translateY(-1px)}
+  .btn.ghost{background:#fff;color:#475569;border:1px solid rgba(148,163,184,.4);font-weight:700}
+  .btn.ghost:hover{border-color:#a5b4fc;color:var(--primary);background:#f8faff}
+  .btn.small{padding:8px 12px;font-size:12.5px;border-radius:10px}
+
+  .divider{height:1px;background:var(--line);margin:16px 0 14px}
+  .scheme-title{font-size:12px;font-weight:800;color:#64748b;letter-spacing:.08em;margin-bottom:9px}
+  .scheme-list{display:flex;flex-direction:column;gap:7px}
+  .scheme-opt{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;border:1.5px solid var(--line);background:#fff;cursor:pointer;text-align:left;font-family:inherit;transition:.18s}
+  .scheme-opt:hover{border-color:#c7d2fe}
+  .scheme-opt .dot{width:11px;height:11px;border-radius:50%;border:2px solid #cbd5e1;flex:none;transition:.18s;background:#fff}
+  .scheme-opt.active{border-color:#a5b4fc;background:#f5f7ff;box-shadow:0 0 0 3px rgba(79,70,229,.08)}
+  .scheme-opt.active .dot{border-color:var(--primary);background:var(--primary);box-shadow:inset 0 0 0 2.5px #fff}
+  .scheme-txt{display:flex;flex-direction:column;line-height:1.35;min-width:0}
+  .scheme-txt b{font-size:13px;color:#1e293b}
+  .scheme-txt small{font-size:11px;color:var(--muted)}
+  .scheme-note{font-size:11.5px;line-height:1.6;color:var(--muted);margin:12px 0 0;min-height:32px}
+
+  /* ---------- 三问 ---------- */
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:6px 2px 14px}
+  .section-head h2{font-size:21px;font-weight:800;margin:0;letter-spacing:-.01em}
+  .answers{display:flex;gap:8px;flex-wrap:wrap}
+  .answers span{font-size:12px;font-weight:700;color:#475569;background:#fff;border:1px solid var(--line);padding:6px 11px;border-radius:999px;font-variant-numeric:tabular-nums}
+  .answers span b{color:var(--primary)}
+
+  .qa{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-bottom:26px;align-items:start}
+  .qa-card{padding:18px 18px 16px;display:flex;flex-direction:column}
+  .qa-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  .qa-num{width:28px;height:28px;border-radius:9px;background:var(--primary-soft);color:var(--primary);font-weight:800;font-size:14px;display:grid;place-items:center;flex:none}
+  .qa-head h3{font-size:14.5px;margin:0;font-weight:800;color:#1e293b;line-height:1.4}
+  .qa-q{font-size:13px;line-height:1.7;color:#475569;margin:0 0 10px}
+  .qa-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+  .solution{display:none;margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+  .qa-card.open .solution{display:block;animation:fade .28s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .steps{list-style:none;margin:0 0 6px;padding:0}
+  .steps li{position:relative;padding-left:15px;margin-bottom:7px;font-size:12.5px;line-height:1.65;color:#334155}
+  .steps li::before{content:"";position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:#c7d2fe}
+  .formula{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid var(--primary);border-radius:8px;padding:9px 11px;margin:7px 0;color:#0f172a;line-height:1.7;overflow-x:auto;font-variant-numeric:tabular-nums}
+  .answer{font-weight:800;color:#92400e;background:#fffbeb;border:1px solid #fde68a;padding:8px 11px;border-radius:9px;font-size:12.5px;line-height:1.6;margin-top:8px}
+  .option{border:1px solid var(--line);border-radius:12px;padding:10px 11px;margin-top:9px;background:#fcfdff}
+  .option-title{font-size:12px;font-weight:800;color:#4338ca;margin-bottom:4px}
+  .option p{font-size:12px;color:#475569;margin:6px 0 8px;line-height:1.65}
+  .option .btn{margin-top:2px}
+
+  /* ---------- 原题 ---------- */
+  .original{margin-bottom:20px;overflow:hidden}
+  .original summary{cursor:pointer;padding:17px 20px;font-size:14.5px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:9px;list-style:none}
+  .original summary::-webkit-details-marker{display:none}
+  .original summary::after{content:"＋";margin-left:auto;color:#94a3b8;font-weight:700}
+  .original[open] summary::after{content:"－"}
+  .original[open] summary{border-bottom:1px solid var(--line)}
+  .original-body{padding:16px 20px 20px;font-size:13.5px;line-height:1.95;color:#334155}
+  .original-body p{margin:0 0 10px}
+  .original-body img{width:100%;max-width:920px;border-radius:12px;border:1px solid var(--line);display:block;margin-top:8px}
+
+  .footer{font-size:11.5px;color:#94a3b8;text-align:center;line-height:1.8;padding-top:8px}
+  .footer b{color:#64748b;font-weight:600}
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width:1080px){
+    .lab,.work{grid-template-columns:1fr}
+    .qa{grid-template-columns:1fr}
+    .graph-wrap{padding:2px 10px 10px}
+    .card-sub{max-width:none}
+  }
+  @media (max-width:640px){
+    .page{padding:18px 14px 54px}
+    h1{font-size:26px}
+    .sub{font-size:14px}
+    .card-head{padding:14px 15px 8px}
+    .force-big b{font-size:30px}
+    .stats{grid-template-columns:1fr 1fr}
+    .stat:last-child{grid-column:span 2}
+    .qa-card{padding:16px 15px}
+    .answers span{font-size:11px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">初中物理 · 电学动态电路</div>
+    <h1>击打力测量电路 <span class="grad">互动还原</span></h1>
+    <p class="sub">第 34 题：小亮用压力应变片 <b>R</b> 测量击打力。闭合开关 S 后击打应变片，电流表示数随之变化——拖动滑块或直接击打电阻，观察 <b>R、I</b> 与 <b>R–F 图像</b>如何联动。</p>
+    <div class="chips">
+      <span class="chip">电源电压 <b>24 V</b></span>
+      <span class="chip">定值电阻 R₀ <b>20 Ω</b></span>
+      <span class="chip">电流表量程 <b>0 ~ 0.6 A</b></span>
+      <span class="chip">R–F 关系 <b>图 27 乙</b></span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 第一行：电路 + 电流表 -->
+    <section class="lab" id="lab">
+      <article class="card circuit-card">
+        <div class="card-head">
+          <div class="card-title"><span class="tag">图 27 甲</span>模拟电路</div>
+          <span class="card-sub" id="circuitMode">原设计 · U = 24 V，R₀ = 20 Ω</span>
+        </div>
+        <div class="circuit-wrap">
+          <svg class="circuit" viewBox="0 0 660 440" role="img" aria-label="电源、开关、定值电阻R0、压力应变片R与电流表串联的模拟电路">
+            <defs>
+              <linearGradient id="rGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#eef2ff"/><stop offset="1" stop-color="#dfe6ff"/>
+              </linearGradient>
+            </defs>
+
+            <!-- 导线 -->
+            <g stroke="#334155" stroke-width="3.5" stroke-linecap="round" fill="none">
+              <path d="M110 120 H290"/>
+              <path d="M410 120 H560"/>
+              <path d="M560 120 V194"/>
+              <path d="M560 266 V350"/>
+              <path d="M560 350 H470"/>
+              <path d="M410 350 H326"/>
+              <path d="M312 350 H110"/>
+              <path d="M110 120 V190"/>
+              <path d="M110 280 V350"/>
+            </g>
+
+            <!-- 电流动画（移动光点，绘制在元件之下） -->
+            <path id="currentFlow" d="M110 350 H560 V120 H110 Z" fill="none" stroke="#e0e7ff" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 39.9"/>
+
+            <!-- R0 -->
+            <g id="r0Group">
+              <rect id="r0Box" x="92" y="190" width="36" height="90" rx="5" fill="#f8fafc" stroke="#475569" stroke-width="3"/>
+              <text x="84" y="228" text-anchor="end" class="lbl">R₀</text>
+              <text id="r0Value" x="84" y="252" text-anchor="end" class="val">20 Ω</text>
+            </g>
+
+            <!-- 压力应变片 R -->
+            <g id="rGroup">
+              <rect id="rBox" x="290" y="101" width="120" height="38" rx="5" fill="url(#rGrad)" stroke="#4f46e5" stroke-width="3"/>
+              <text x="350" y="126" text-anchor="middle" class="rname">R</text>
+              <text id="rValue" x="350" y="168" text-anchor="middle" class="val small">30 Ω</text>
+            </g>
+
+            <!-- 拳头与击打特效 -->
+            <circle id="shock" cx="350" cy="120" r="10" fill="none" stroke="#fb923c" stroke-width="3" opacity="0"/>
+            <text id="fist" x="350" y="92" text-anchor="middle" font-size="44">👊</text>
+            <text id="forcePop" x="350" y="44" text-anchor="middle" font-size="16" font-weight="800" fill="#ea580c" opacity="0">F = 1000 N</text>
+
+            <!-- 电流表 -->
+            <circle cx="560" cy="230" r="36" fill="#fff" stroke="#334155" stroke-width="3.5"/>
+            <text x="560" y="239" text-anchor="middle" font-size="24" font-weight="800" fill="#334155">A</text>
+            <text x="516" y="292" text-anchor="end" class="val tiny">0 ~ 0.6 A</text>
+
+            <!-- 电源 -->
+            <g id="battGroup">
+              <line x1="326" y1="322" x2="326" y2="378" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+              <line x1="312" y1="336" x2="312" y2="364" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+              <text id="battValue" x="319" y="404" text-anchor="middle" class="val">24 V</text>
+            </g>
+
+            <!-- 开关 S -->
+            <g>
+              <line x1="410" y1="350" x2="468" y2="345" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="410" cy="350" r="4.5" fill="#334155"/>
+              <circle cx="470" cy="350" r="4.5" fill="#334155"/>
+              <text x="438" y="386" text-anchor="middle" class="val">S</text>
+            </g>
+          </svg>
+        </div>
+        <div class="formula-bar" id="formulaBar">
+          <span class="fb-label">串联电路</span>
+          <span id="liveFormula">I = U / (R₀ + R) = 24 V / (20 Ω + 30 Ω) = 0.48 A</span>
+        </div>
+        <p class="circuit-tip"><b>F ↑ → R ↓ → I ↑</b>　击打力越大，应变片阻值越小，电流表示数越大。</p>
+      </article>
+
+      <article class="card gauge-card">
+        <div class="card-head">
+          <div class="card-title"><span class="tag">电流表</span>示数</div>
+          <span class="status ok" id="statusChip">✓ 在量程内</span>
+        </div>
+        <div class="gauge-wrap">
+          <svg id="gauge" class="gauge" viewBox="0 0 380 276" role="img" aria-label="电流表示数表盘，量程0到0.6安">
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#34d399"/>
+                <stop offset=".55" stop-color="#fbbf24"/>
+                <stop offset="1" stop-color="#f87171"/>
+              </linearGradient>
+            </defs>
+            <path d="M40 195 A150 150 0 0 1 340 195" fill="none" stroke="#e9edf5" stroke-width="14" stroke-linecap="round"/>
+            <path id="arcFill" d="M40 195 A150 150 0 0 1 340 195" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"/>
+            <g id="gaugeTicks"></g>
+            <line id="needle" x1="190" y1="195" x2="190" y2="67" stroke="#e11d48" stroke-width="4.5" stroke-linecap="round"/>
+            <circle cx="190" cy="195" r="9" fill="#0f172a"/>
+            <circle cx="190" cy="195" r="3.5" fill="#fff"/>
+            <text id="gaugeValue" x="190" y="258" text-anchor="middle" class="gauge-value">0.48 A</text>
+          </svg>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="stat-k">应变片 R</span><span class="stat-v" id="rVal">30 Ω</span></div>
+          <div class="stat"><span class="stat-k">总电阻 R总</span><span class="stat-v" id="totalVal">50 Ω</span></div>
+          <div class="stat"><span class="stat-k">电源电压</span><span class="stat-v" id="uVal">24 V</span></div>
+        </div>
+        <p class="gauge-hint" id="gaugeHint">电流表量程上限 0.6 A：要求 R ≥ 24 V ÷ 0.6 A − 20 Ω = 20 Ω，对应最大击打力 2000 N。</p>
+      </article>
+    </section>
+
+    <!-- 第二行：图像 + 操作台 -->
+    <section class="work">
+      <article class="card graph-card">
+        <div class="card-head">
+          <div class="card-title"><span class="tag">图 27 乙</span>压力应变片 R 与击打力 F 的关系</div>
+          <span class="card-sub">点击 / 拖动图像即可改变击打力</span>
+        </div>
+        <div class="graph-wrap">
+          <svg id="graphSvg" class="graph" viewBox="0 0 640 400" role="img" aria-label="压力应变片电阻R随击打力F变化的图像">
+            <defs>
+              <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#6366f1" stop-opacity=".30"/>
+                <stop offset="1" stop-color="#6366f1" stop-opacity="0"/>
+              </linearGradient>
+              <marker id="arrow" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 z" fill="#334155"/>
+              </marker>
+            </defs>
+            <g id="grid"></g>
+            <path id="area" d="" fill="url(#areaGrad)"/>
+            <path id="curve" d="" fill="none" stroke="#4f46e5" stroke-width="3.5" stroke-linecap="round"/>
+            <g id="guides"></g>
+            <g>
+              <line x1="80" y1="320" x2="612" y2="320" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+              <line x1="80" y1="320" x2="80" y2="50" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+            </g>
+            <g id="ticks"></g>
+            <text x="80" y="38" class="axis-title">R/Ω</text>
+            <text x="600" y="382" text-anchor="end" class="axis-title">F/10³N</text>
+            <g id="limitGroup">
+              <line id="limitLine" x1="286" y1="50" x2="286" y2="320" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="6 6" opacity=".75"/>
+              <circle id="limitDot" cx="286" cy="214" r="4" fill="#f59e0b" stroke="#fff" stroke-width="1.6"/>
+              <text id="limitText" x="286" y="44" text-anchor="middle">安全上限 2000 N</text>
+            </g>
+            <g id="marker">
+              <line id="mLineV" x1="286" y1="320" x2="286" y2="162" stroke="#f97316" stroke-width="1.6" stroke-dasharray="4 5"/>
+              <line id="mLineH" x1="80" y1="162" x2="286" y2="162" stroke="#f97316" stroke-width="1.6" stroke-dasharray="4 5"/>
+              <circle id="mDot" cx="286" cy="162" r="6.5" fill="#f97316" stroke="#fff" stroke-width="2.5"/>
+              <g id="mLabel">
+                <rect id="mLabelBg" x="302" y="106" width="136" height="48" rx="10" fill="#fff" stroke="#fdba74" stroke-width="1.4"/>
+                <text id="mLabelF" x="314" y="126">F = 1000 N</text>
+                <text id="mLabelR" x="314" y="145">R = 30 Ω</text>
+              </g>
+            </g>
+          </svg>
+        </div>
+      </article>
+
+      <article class="card control-card">
+        <div class="card-head">
+          <div class="card-title"><span class="tag">操作台</span>击打力与方案</div>
+        </div>
+        <div class="control-body">
+          <div class="force-row">
+            <span>击打力 F</span>
+            <span class="force-big"><b id="forceBig">1000</b> N</span>
+          </div>
+          <input id="forceRange" type="range" min="0" max="5000" step="50" value="1000" aria-label="击打力，单位牛顿">
+          <div class="range-ticks"><span>0</span><span>1000</span><span>2000</span><span>3000</span><span>4000</span><span>5000 N</span></div>
+          <div class="quick-row">
+            <button class="qbtn" data-quick="0">0</button>
+            <button class="qbtn" data-quick="1000">1000 N</button>
+            <button class="qbtn" data-quick="2000">2000 N</button>
+            <button class="qbtn" data-quick="3000">3000 N</button>
+            <button class="qbtn" data-quick="5000">5000 N</button>
+          </div>
+          <button class="btn hit" id="hitBtn">👊 击打应变片</button>
+
+          <div class="divider"></div>
+          <div class="scheme-title">改进方案（对应第 3 问）</div>
+          <div class="scheme-list" role="group" aria-label="改进方案">
+            <button class="scheme-opt active" data-scheme="base">
+              <span class="dot"></span>
+              <span class="scheme-txt"><b>原设计</b><small>U = 24 V，R₀ = 20 Ω</small></span>
+            </button>
+            <button class="scheme-opt" data-scheme="a">
+              <span class="dot"></span>
+              <span class="scheme-txt"><b>改进① 增大 R₀</b><small>R₀ = 30 Ω，U = 24 V</small></span>
+            </button>
+            <button class="scheme-opt" data-scheme="b">
+              <span class="dot"></span>
+              <span class="scheme-txt"><b>改进② 降低电源电压</b><small>U = 18 V，R₀ = 20 Ω</small></span>
+            </button>
+          </div>
+          <p class="scheme-note" id="schemeNote">原设计中，F = 2000 N 时电流恰好为 0.6 A；超过 2000 N 就会超量程。</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- 三问 -->
+    <section class="qa-section">
+      <div class="section-head">
+        <h2>三问精析</h2>
+        <div class="answers">
+          <span>（1）<b>0.48 A</b></span>
+          <span>（2）<b>2000 N</b></span>
+          <span>（3）<b>R₀→30 Ω</b> 或 <b>U→18 V</b></span>
+        </div>
+      </div>
+
+      <div class="qa">
+        <article class="card qa-card">
+          <div class="qa-head"><span class="qa-num">1</span><h3>1000 N 时电流表的示数</h3></div>
+          <p class="qa-q">当小亮用 1000 N 的力击打压力应变片 R 时，电流表的示数为多少？</p>
+          <div class="qa-actions">
+            <button class="btn ghost small" data-demo-f="1000" data-demo-scheme="base">▶ 在模拟中演示</button>
+            <button class="btn ghost small qa-toggle">展开解析</button>
+          </div>
+          <div class="solution">
+            <ul class="steps">
+              <li>由图乙：F = 1×10³ N 时，R = 30 Ω。</li>
+              <li>R₀ 与 R 串联，总电阻 R总 = 20 Ω + 30 Ω = 50 Ω。</li>
+            </ul>
+            <div class="formula">I = U / R总 = 24 V / 50 Ω = 0.48 A</div>
+            <div class="answer">答：电流表示数为 0.48 A，在 0 ~ 0.6 A 量程内。</div>
+          </div>
+        </article>
+
+        <article class="card qa-card">
+          <div class="qa-head"><span class="qa-num">2</span><h3>能测量的最大击打力</h3></div>
+          <p class="qa-q">在保证电路元件安全的情况下，该电路能测量的最大击打力是多少？</p>
+          <div class="qa-actions">
+            <button class="btn ghost small" data-demo-f="2000" data-demo-scheme="base">▶ 在模拟中演示</button>
+            <button class="btn ghost small qa-toggle">展开解析</button>
+          </div>
+          <div class="solution">
+            <ul class="steps">
+              <li>电流表量程 0 ~ 0.6 A，电路允许的最大电流 I大 = 0.6 A。</li>
+              <li>此时总电阻至少为 R总′ = U / I大 = 24 V / 0.6 A = 40 Ω。</li>
+              <li>应变片阻值至少为 R小 = 40 Ω − 20 Ω = 20 Ω。</li>
+              <li>由图乙，R = 20 Ω 时 F = 2×10³ N = 2000 N。</li>
+            </ul>
+            <div class="formula">U / (R₀ + R) ≤ 0.6 A ⟹ R ≥ 24/0.6 − 20 = 20 Ω ⟹ F ≤ 2000 N</div>
+            <div class="answer">答：该电路能测量的最大击打力为 2000 N。</div>
+          </div>
+        </article>
+
+        <article class="card qa-card">
+          <div class="qa-head"><span class="qa-num">3</span><h3>测量 3000 N 的改进方案</h3></div>
+          <p class="qa-q">要测量 3000 N 的击打力，在不改变电路连接方式、电流表量程及应变片 R 的情况下，请提出合理的改进建议。</p>
+          <div class="qa-actions">
+            <button class="btn ghost small" data-demo-f="3000" data-demo-scheme="base">▶ 看看原设计（超量程）</button>
+            <button class="btn ghost small qa-toggle">展开解析</button>
+          </div>
+          <div class="solution">
+            <ul class="steps">
+              <li>由图乙：F = 3×10³ N 时，R = 10 Ω。</li>
+              <li>原设计：I = 24 V ÷ (20 Ω + 10 Ω) = 0.8 A &gt; 0.6 A，超过量程，不能安全测量。</li>
+            </ul>
+            <div class="option">
+              <div class="option-title">方案一 · 增大定值电阻 R₀</div>
+              <div class="formula">R₀′ ≥ U/I大 − R = 24 V / 0.6 A − 10 Ω = 30 Ω</div>
+              <p>把 R₀ 换成 30 Ω 的定值电阻。此时 I = 24 V / 40 Ω = 0.6 A，恰好满偏。</p>
+              <button class="btn ghost small" data-demo-f="3000" data-demo-scheme="a">▶ 启用改进①</button>
+            </div>
+            <div class="option">
+              <div class="option-title">方案二 · 降低电源电压</div>
+              <div class="formula">U′ ≤ I大(R₀ + R) = 0.6 A × (20 Ω + 10 Ω) = 18 V</div>
+              <p>把电源电压调到 18 V（或更低）。此时 I = 18 V / 30 Ω = 0.6 A，恰好满偏。</p>
+              <button class="btn ghost small" data-demo-f="3000" data-demo-scheme="b">▶ 启用改进②</button>
+            </div>
+            <div class="answer">答：将 R₀ 换成 30 Ω 的定值电阻，或将电源电压降到 18 V（任选其一）。</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 原题 -->
+    <section class="card original">
+      <details>
+        <summary><span class="tag">原题</span>题目原文与试卷扫描件</summary>
+        <div class="original-body">
+          <p>34. 如图 27 甲，是小亮为测量击打力而设计的简易模拟电路图，闭合开关 S，当击打压力应变片 R 时，可以通过电流表的示数来反映击打力的大小。已知电源两端电压为 24 V 且保持不变，定值电阻 R₀ 的阻值为 20 Ω，电流表的量程为 0 ~ 0.6 A，压力应变片 R 的电阻值与击打力 F 的关系如图 27 乙。求：</p>
+          <p>（1）当小亮用 1000 N 的力击打压力应变片 R 时，电流表的示数。</p>
+          <p>（2）在保证电路元件安全的情况下，该电路能测量的最大击打力。</p>
+          <p>（3）为使该电路能测量 3000 N 的击打力，需要对小亮的设计进行改进。在不改变电路连接方式、电流表的量程及压力应变片 R 的情况下，请你通过计算提出一种合理的改进建议。</p>
+          <img src="assets/original.jpg" alt="第 34 题原题扫描件" loading="lazy">
+        </div>
+      </details>
+    </section>
+
+    <footer class="footer">
+      数据完全取自原题：U = 24 V，R₀ = 20 Ω，电流表 0 ~ 0.6 A；R–F 图像按图 27 乙重绘（F = 1 / 2 / 3 ×10³ N 时 R = 30 / 20 / 10 Ω）。<br>
+      <b>北师大实验中学 2026–2027 学年度第一学期期中试卷 · 初三年级物理 · 第 34 题</b>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ================= 数据 ================= */
+  // 图 27 乙 的 R–F 关系（单位：10³N / Ω），关键点来自原题
+  const DATA = [
+    [0, 50], [0.5, 36], [1, 30], [1.5, 24.5], [2, 20],
+    [2.5, 14.5], [3, 10], [3.5, 7.2], [4, 5.3], [4.5, 4.1], [5, 3.4]
+  ];
+  const SCHEMES = {
+    base: { U: 24, R0: 20 },
+    a:    { U: 24, R0: 30 },
+    b:    { U: 18, R0: 20 }
+  };
+
+  // 单调三次插值（PCHIP）
+  function pchip(points){
+    const n = points.length;
+    const xs = points.map(p => p[0]);
+    const ys = points.map(p => p[1]);
+    const h = [], d = [], m = new Array(n);
+    for (let i = 0; i < n - 1; i++){ h[i] = xs[i+1] - xs[i]; d[i] = (ys[i+1] - ys[i]) / h[i]; }
+    m[0] = d[0]; m[n-1] = d[n-2];
+    for (let i = 1; i < n - 1; i++){
+      if (d[i-1] * d[i] <= 0) { m[i] = 0; }
+      else {
+        const w1 = 2*h[i] + h[i-1];
+        const w2 = h[i] + 2*h[i-1];
+        m[i] = (w1 + w2) / (w1/d[i-1] + w2/d[i]);
+      }
+    }
+    return function(x){
+      if (x <= xs[0]) return ys[0];
+      if (x >= xs[n-1]) return ys[n-1];
+      let i = 0;
+      while (x > xs[i+1]) i++;
+      const t = (x - xs[i]) / h[i], t2 = t*t, t3 = t2*t;
+      return (2*t3 - 3*t2 + 1) * ys[i]
+           + (t3 - 2*t2 + t) * h[i] * m[i]
+           + (-2*t3 + 3*t2) * ys[i+1]
+           + (t3 - t2) * h[i] * m[i+1];
+    };
+  }
+  const Rof = pchip(DATA);
+
+  const $ = id => document.getElementById(id);
+  const state = { F: 1000, scheme: 'base' };
+
+  function fmtNum(v){
+    const t = Math.round(v * 10) / 10;
+    return Number.isInteger(t) ? String(t) : t.toFixed(1);
+  }
+
+  /* ================= 图像 ================= */
+  const GX0 = 80, GX1 = 596, GY0 = 320, GY1 = 56;
+  const xF = f => GX0 + (GX1 - GX0) * f / 5;
+  const yR = r => GY0 - (GY0 - GY1) * r / 50;
+
+  const graphSvg = $('graphSvg');
+  const curve = $('curve'), area = $('area');
+
+  (function buildGraph(){
+    // 浅网格
+    let g = '';
+    for (let r = 10; r <= 40; r += 10)
+      g += `<line x1="${GX0}" y1="${yR(r)}" x2="${GX1}" y2="${yR(r)}" stroke="#eef2f7" stroke-width="1"/>`;
+    for (let f = 1; f <= 4; f++)
+      g += `<line x1="${xF(f)}" y1="${GY0}" x2="${xF(f)}" y2="${GY1}" stroke="#eef2f7" stroke-width="1"/>`;
+    $('grid').innerHTML = g;
+
+    // 关键点辅助线
+    let q = '';
+    [[1,30],[2,20],[3,10]].forEach(([f, r]) => {
+      const x = xF(f), y = yR(r);
+      q += `<line x1="${x}" y1="${GY0}" x2="${x}" y2="${y}" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="4 5"/>`;
+      q += `<line x1="${GX0}" y1="${y}" x2="${x}" y2="${y}" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="4 5"/>`;
+      q += `<circle cx="${x}" cy="${y}" r="3.2" fill="#fff" stroke="#64748b" stroke-width="1.6"/>`;
+    });
+    $('guides').innerHTML = q;
+
+    // 坐标刻度
+    let t = '';
+    for (let f = 0; f <= 5; f++){
+      t += `<line x1="${xF(f)}" y1="${GY0}" x2="${xF(f)}" y2="${GY0+8}" stroke="#334155" stroke-width="1.6"/>`;
+      t += `<text x="${xF(f)}" y="${GY0+26}" text-anchor="middle" class="tick">${f}</text>`;
+    }
+    for (let r = 0; r <= 50; r += 10){
+      t += `<line x1="${GX0-8}" y1="${yR(r)}" x2="${GX0}" y2="${yR(r)}" stroke="#334155" stroke-width="1.6"/>`;
+      t += `<text x="${GX0-14}" y="${yR(r)+5}" text-anchor="end" class="tick">${r}</text>`;
+    }
+    $('ticks').innerHTML = t;
+
+    // 曲线
+    let d = '';
+    for (let f = 0; f <= 5.0001; f += 0.02)
+      d += (d ? 'L' : 'M') + xF(f).toFixed(1) + ' ' + yR(Rof(f)).toFixed(1) + ' ';
+    curve.setAttribute('d', d);
+    area.setAttribute('d', d + `L ${GX1} ${GY0} L ${GX0} ${GY0} Z`);
+  })();
+
+  const mLineV = $('mLineV'), mLineH = $('mLineH'), mDot = $('mDot');
+  const mLabelBg = $('mLabelBg'), mLabelF = $('mLabelF'), mLabelR = $('mLabelR');
+
+  function drawMarker(fNewton){
+    const f = Math.max(0, Math.min(5, fNewton / 1000));
+    const r = Rof(f);
+    const x = xF(f), y = yR(r);
+    mLineV.setAttribute('x1', x); mLineV.setAttribute('x2', x);
+    mLineV.setAttribute('y1', GY0); mLineV.setAttribute('y2', y);
+    mLineH.setAttribute('y1', y); mLineH.setAttribute('y2', y);
+    mLineH.setAttribute('x1', GX0); mLineH.setAttribute('x2', x);
+    mDot.setAttribute('cx', x); mDot.setAttribute('cy', y);
+
+    const w = 136, h = 48;
+    let lx = x + 16, ly = y - h - 12;
+    if (lx + w > GX1 + 12) lx = x - w - 16;
+    if (ly < 6) ly = y + 16;
+    mLabelBg.setAttribute('x', lx); mLabelBg.setAttribute('y', ly);
+    mLabelBg.setAttribute('width', w); mLabelBg.setAttribute('height', h);
+    mLabelF.setAttribute('x', lx + 12); mLabelF.setAttribute('y', ly + 20);
+    mLabelR.setAttribute('x', lx + 12); mLabelR.setAttribute('y', ly + 39);
+    mLabelF.textContent = 'F = ' + (Math.round(fNewton / 10) * 10) + ' N';
+    mLabelR.textContent = 'R = ' + fmtNum(r) + ' Ω';
+  }
+
+  /* ================= 电流表表盘 ================= */
+  const GC = { cx: 190, cy: 195, r: 150 };
+  function polar(v, rr){
+    const a = Math.PI * (1 - Math.min(v, 0.6) / 0.6);
+    return [GC.cx + rr * Math.cos(a), GC.cy - rr * Math.sin(a)];
+  }
+  (function buildGaugeTicks(){
+    let s = '';
+    for (let v = 0; v <= 0.6001; v += 0.05){
+      const major = Math.abs(v * 10 - Math.round(v * 10)) < 1e-6;
+      const [x1, y1] = polar(v, GC.r);
+      const [x2, y2] = polar(v, GC.r + (major ? 13 : 7));
+      s += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#94a3b8" stroke-width="${major ? 2 : 1.2}" stroke-linecap="round"/>`;
+      if (major){
+        const [tx, ty] = polar(v, GC.r + 30);
+        s += `<text x="${tx.toFixed(1)}" y="${(ty + 4).toFixed(1)}" text-anchor="middle" font-size="12.5" fill="#64748b" font-weight="600">${v.toFixed(1)}</text>`;
+      }
+    }
+    $('gaugeTicks').innerHTML = s;
+  })();
+
+  const gauge = $('gauge'), needle = $('needle'), arcFill = $('arcFill'), gaugeValue = $('gaugeValue');
+  const gaugeArcLen = arcFill.getTotalLength();
+  arcFill.setAttribute('stroke-dasharray', gaugeArcLen + ' ' + gaugeArcLen);
+  arcFill.setAttribute('stroke-dashoffset', gaugeArcLen);
+
+  function setGauge(I){
+    const v = Math.min(I, 0.6);
+    const [nx, ny] = polar(v, GC.r - 26);
+    needle.setAttribute('x2', nx.toFixed(1));
+    needle.setAttribute('y2', ny.toFixed(1));
+    const ratio = Math.max(0, v) / 0.6;
+    arcFill.setAttribute('stroke-dashoffset', (gaugeArcLen * (1 - ratio)).toFixed(1));
+    gaugeValue.textContent = I.toFixed(2) + ' A';
+    const over = I > 0.6005;
+    gauge.classList.toggle('over', over);
+    gaugeValue.classList.toggle('danger-text', over);
+  }
+
+  /* ================= 电路电流动画 ================= */
+  const flow = $('currentFlow');
+  let flowOffset = 0;
+  function moveFlow(dt, I){
+    flowOffset = (flowOffset - (30 + I * 260) * dt) % 40;
+    flow.setAttribute('stroke-dashoffset', flowOffset.toFixed(1));
+  }
+
+  /* ================= 状态更新 ================= */
+  const els = {
+    forceBig: $('forceBig'), range: $('forceRange'),
+    rVal: $('rVal'), totalVal: $('totalVal'), uVal: $('uVal'),
+    rValue: $('rValue'), r0Value: $('r0Value'), battValue: $('battValue'),
+    liveFormula: $('liveFormula'), formulaBar: $('formulaBar'),
+    statusChip: $('statusChip'), schemeNote: $('schemeNote'),
+    circuitMode: $('circuitMode'), gaugeHint: $('gaugeHint'),
+    r0Box: $('r0Box'), r0Group: $('r0Group'), battGroup: $('battGroup'),
+    limitGroup: $('limitGroup'), limitLine: $('limitLine'), limitDot: $('limitDot'), limitText: $('limitText')
+  };
+
+  function target(){
+    const s = SCHEMES[state.scheme];
+    const R = Rof(state.F / 1000);
+    return { U: s.U, R0: s.R0, R, total: s.R0 + R, I: s.U / (s.R0 + R) };
+  }
+
+  function updateLimit(t){
+    const reqR = t.U / 0.6 - t.R0;
+    if (reqR < Rof(5) - 0.05){
+      els.limitGroup.style.display = 'none';
+      return;
+    }
+    let lo = 0, hi = 5;
+    for (let i = 0; i < 30; i++){
+      const mid = (lo + hi) / 2;
+      if (Rof(mid) > reqR) lo = mid; else hi = mid;
+    }
+    const f = (lo + hi) / 2;
+    const x = xF(f);
+    els.limitGroup.style.display = '';
+    els.limitLine.setAttribute('x1', x); els.limitLine.setAttribute('x2', x);
+    els.limitDot.setAttribute('cx', x); els.limitDot.setAttribute('cy', yR(reqR));
+    els.limitText.setAttribute('x', x);
+    els.limitText.textContent = '安全上限 ' + Math.round(f * 1000) + ' N';
+  }
+
+  function update(){
+    const t = target();
+
+    els.forceBig.textContent = state.F;
+    els.range.value = state.F;
+    els.range.style.setProperty('--p', (state.F / 5000 * 100).toFixed(1) + '%');
+
+    els.rVal.textContent = fmtNum(t.R) + ' Ω';
+    els.totalVal.textContent = fmtNum(t.total) + ' Ω';
+    els.uVal.textContent = t.U + ' V';
+    els.rValue.textContent = 'R = ' + fmtNum(t.R) + ' Ω';
+    els.r0Value.textContent = t.R0 + ' Ω';
+    els.battValue.textContent = t.U + ' V';
+
+    els.liveFormula.innerHTML =
+      'I = U / (R₀ + R) = ' + t.U + ' V / (' + t.R0 + ' Ω + ' + fmtNum(t.R) + ' Ω) = <b>' + t.I.toFixed(2) + ' A</b>';
+    els.formulaBar.classList.toggle('over', t.I > 0.6005);
+
+    let cls = 'ok', txt = '✓ 在量程内';
+    if (t.I > 0.6005){ cls = 'danger'; txt = '⚠ 超量程'; }
+    else if (t.I >= 0.5995){ cls = 'warn'; txt = '满偏 · 0.60 A'; }
+    else if (t.I > 0.56){ cls = 'warn'; txt = '接近满偏'; }
+    els.statusChip.className = 'status ' + cls;
+    els.statusChip.textContent = txt;
+
+    const modeMap = {
+      base: '原设计 · U = 24 V，R₀ = 20 Ω',
+      a: '改进① · R₀ 增大为 30 Ω',
+      b: '改进② · 电源电压降为 18 V'
+    };
+    els.circuitMode.textContent = modeMap[state.scheme];
+
+    const noteMap = {
+      base: '原设计中，F = 2000 N 时电流恰好为 0.6 A；超过 2000 N 就会超量程。',
+      a: '改进①：R₀ = 30 Ω。F = 3000 N 时 I = 24 V ÷ 40 Ω = 0.6 A，恰好满偏。',
+      b: '改进②：U = 18 V。F = 3000 N 时 I = 18 V ÷ 30 Ω = 0.6 A，恰好满偏。'
+    };
+    els.schemeNote.textContent = noteMap[state.scheme];
+
+    if (state.scheme === 'base'){
+      els.gaugeHint.innerHTML = '电流表量程上限 0.6 A：要求 R ≥ 24 V ÷ 0.6 A − 20 Ω = 20 Ω，对应最大击打力 <b>2000 N</b>。';
+    } else if (state.scheme === 'a'){
+      els.gaugeHint.innerHTML = 'R₀ = 30 Ω 时：0.6 A 对应 R ≥ 24 V ÷ 0.6 A − 30 Ω = 10 Ω，对应最大击打力 <b>3000 N</b>。';
+    } else {
+      els.gaugeHint.innerHTML = 'U = 18 V 时：0.6 A 对应 R ≥ 18 V ÷ 0.6 A − 20 Ω = 10 Ω，对应最大击打力 <b>3000 N</b>。';
+    }
+
+    els.r0Group.classList.toggle('modified', state.scheme === 'a');
+    els.battGroup.classList.toggle('modified', state.scheme === 'b');
+
+    document.querySelectorAll('.qbtn').forEach(b => {
+      b.classList.toggle('active', Number(b.dataset.quick) === state.F);
+    });
+
+    updateLimit(t);
+  }
+
+  /* ================= 交互 ================= */
+  function setForce(f){
+    f = Math.max(0, Math.min(5000, f));
+    state.F = Math.round(f / 50) * 50;
+    update();
+  }
+  function setScheme(key){
+    if (!SCHEMES[key]) return;
+    state.scheme = key;
+    document.querySelectorAll('.scheme-opt').forEach(b => {
+      b.classList.toggle('active', b.dataset.scheme === key);
+    });
+    update();
+  }
+
+  els.range.addEventListener('input', e => setForce(Number(e.target.value)));
+
+  document.querySelectorAll('.qbtn').forEach(b => {
+    b.addEventListener('click', () => setForce(Number(b.dataset.quick)));
+  });
+
+  document.querySelectorAll('.scheme-opt').forEach(b => {
+    b.addEventListener('click', () => setScheme(b.dataset.scheme));
+  });
+
+  const fist = $('fist'), rBox = $('rBox'), forcePop = $('forcePop'), shock = $('shock');
+
+  function strike(){
+    [fist, rBox, forcePop, shock].forEach(el => {
+      el.classList.remove('strike', 'hit', 'show', 'go');
+    });
+    // 强制重排，保证动画可以重复触发
+    void fist.getBoundingClientRect();
+    forcePop.textContent = 'F = ' + state.F + ' N';
+    fist.classList.add('strike');
+    rBox.classList.add('hit');
+    forcePop.classList.add('show');
+    shock.classList.add('go');
+  }
+
+  $('hitBtn').addEventListener('click', strike);
+
+  // 图像拖动
+  let dragging = false;
+  function fromPointer(e){
+    const pt = graphSvg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    const p = pt.matrixTransform(graphSvg.getScreenCTM().inverse());
+    if (p.x < GX0 - 6 || p.x > GX1 + 6 || p.y < GY1 - 14 || p.y > GY0 + 14) return;
+    const f = (p.x - GX0) / (GX1 - GX0) * 5;
+    setForce(f * 1000);
+  }
+  graphSvg.addEventListener('pointerdown', e => {
+    dragging = true;
+    try { graphSvg.setPointerCapture(e.pointerId); } catch (err) {}
+    fromPointer(e);
+  });
+  graphSvg.addEventListener('pointermove', e => { if (dragging) fromPointer(e); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => {
+    graphSvg.addEventListener(ev, () => { dragging = false; });
+  });
+
+  // 解析展开
+  document.querySelectorAll('.qa-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.qa-card');
+      const open = card.classList.toggle('open');
+      btn.textContent = open ? '收起解析' : '展开解析';
+    });
+  });
+
+  // 演示按钮
+  document.querySelectorAll('[data-demo-f]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setScheme(btn.dataset.demoScheme || 'base');
+      setForce(Number(btn.dataset.demoF));
+      strike();
+      $('lab').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  /* ================= 动画循环 ================= */
+  let dispI = 0, dispF = state.F, last = performance.now();
+  function frame(now){
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    const t = target();
+    dispI += (t.I - dispI) * Math.min(1, dt * 9);
+    dispF += (state.F - dispF) * Math.min(1, dt * 10);
+    setGauge(dispI);
+    drawMarker(dispF);
+    moveFlow(dt, dispI);
+    requestAnimationFrame(frame);
+  }
+
+  update();
+  drawMarker(state.F);
+  setGauge(0);
+  requestAnimationFrame(frame);
+})();
+</script>
+
+<style>
+  /* 电路动画（放在这里，避免影响布局） */
+  #fist{transform-box:fill-box;transform-origin:center}
+  #fist.strike{animation:strike .6s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes strike{
+    0%{transform:translateY(0)}
+    32%{transform:translateY(22px)}
+    58%{transform:translateY(19px)}
+    100%{transform:translateY(0)}
+  }
+  #rBox.hit{animation:boxHit .6s ease}
+  @keyframes boxHit{
+    0%,100%{filter:none}
+    30%{filter:drop-shadow(0 0 10px rgba(249,115,22,.95));fill:#ffedd5}
+    65%{fill:#fee2e2}
+  }
+  #forcePop{opacity:0}
+  #forcePop.show{animation:pop 1s ease-out}
+  @keyframes pop{
+    0%{opacity:0;transform:translateY(6px)}
+    18%{opacity:1}
+    72%{opacity:1;transform:translateY(-10px)}
+    100%{opacity:0;transform:translateY(-20px)}
+  }
+  #shock{transform-box:fill-box;transform-origin:center;opacity:0}
+  #shock.go{animation:shock .7s ease-out}
+  @keyframes shock{
+    0%{opacity:.85;transform:scale(.35)}
+    100%{opacity:0;transform:scale(5.2)}
+  }
+  #r0Group.modified #r0Box{stroke:#f59e0b;filter:drop-shadow(0 0 6px rgba(245,158,11,.6))}
+  #r0Group.modified .val{fill:#b45309;font-weight:700}
+  #battGroup.modified line{stroke:#f59e0b}
+  #battGroup.modified .val{fill:#b45309;font-weight:700}
+</style>
+</body>
+</html>
